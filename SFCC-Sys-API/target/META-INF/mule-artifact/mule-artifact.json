@@ -1,0 +1,54 @@
+{
+  "configs": [
+    "common/sfcc-sys-api.xml",
+    "EndPointsImplementations/sfcc-get-sys-api-flows.xml",
+    "common/healthcheck.xml",
+    "EndPointsImplementations/sfcc-patch-sys-api-flows.xml",
+    "common/global.xml",
+    "pushOrderImplementation/sfcc-sys-api-push-order-status.xml"
+  ],
+  "secureProperties": [
+    "mule.key",
+    "anypoint.platform.client_id",
+    "anypoint.platform.client_secret"
+  ],
+  "redeploymentEnabled": true,
+  "name": "48335c82-2ddc-455c-aafb-8c7e3a61fb77:sfcc-sys-api:1.0.0",
+  "minMuleVersion": "4.3.0",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": [
+        "log4j2.xml",
+        ".DS_Store",
+        "pushOrderImplementation/sfcc-sys-api-push-order-status.xml",
+        "config/qa.yaml",
+        "config/dev.yaml",
+        "config/common.yaml",
+        "config/local.yaml",
+        "config/prod.yaml",
+        "config/secured/qa.yaml",
+        "config/secured/dev.yaml",
+        "config/secured/local.yaml",
+        "config/secured/prod.yaml",
+        "application-types.xml",
+        "keystore.jks",
+        "common/global.xml",
+        "common/sfcc-sys-api.xml",
+        "common/healthcheck.xml",
+        "dwl/healthcheck/setVerboseResponse.dwl",
+        "dwl/healthcheck/setBasicResponse.dwl",
+        "examples/fulfillmentStatus_example.json",
+        "examples/getOrder_example.json",
+        "EndPointsImplementations/sfcc-patch-sys-api-flows.xml",
+        "EndPointsImplementations/sfcc-get-sys-api-flows.xml"
+      ]
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}

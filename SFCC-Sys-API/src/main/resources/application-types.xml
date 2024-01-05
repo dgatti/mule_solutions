@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="SFCC-Order-Status" format="json">
+      <types:shape format="weave" example="examples/getOrder_example.json"><![CDATA[%dw 2.0
+
+type SFCC_Order_Status = {|
+  adjustedMerchandizeTotalTax: Number {"typeId": "double"}, 
+  adjustedShippingTotalTax: Number {"typeId": "double"}, 
+  billingAddress: {|
+    address1: String, 
+    city: String, 
+    countryCode: String, 
+    firstName: String, 
+    fullName: String, 
+    lastName: String, 
+    phone: String, 
+    postalCode: String, 
+    stateCode: String, 
+    c_municipality: String, 
+    c_outerNumber: String
+  |}, 
+  confirmationStatus: String, 
+  createdBy: String, 
+  creationDate: String, 
+  currency: String, 
+  customerInfo: {|
+    customerId: String, 
+    customerName: String, 
+    email: String, 
+    guest: Boolean
+  |}, 
+  customerLocale: String, 
+  exportStatus: String, 
+  externalOrderNo: String, 
+  invoiceNo: String, 
+  lastModified: String, 
+  merchandizeTotalTax: Number {"typeId": "double"}, 
+  notes: Array<{|    createdBy: String,     creationDate: String,     subject: String,     text: String  |}>, 
+  orderNo: String, 
+  orderTotal: Number {"typeId": "double"}, 
+  paymentInstruments: Array<{|    paymentCard: {|      cardType: String,       creditCardExpired: Boolean,       creditCardToken: String,       expirationMonth: Number {"typeId": "int"},       expirationYear: Number {"typeId": "int"},       holder: String,       maskedNumber: String,       numberLastDigits: String    |},     paymentInstrumentId: String,     paymentMethodId: String,     paymentTransaction: {|      amount: Number {"typeId": "double"},       transactionId: String    |},     c_accertifyRecommendationCode: String,     c_cardBinType: String,     c_palacioCardWithChip: Boolean,     c_paymentSchemas: String,     c_paymentStatus: String,     c_paymentType: String,     c_sequenceNumber: String  |}>, 
+  paymentStatus: String, 
+  placeDate: String, 
+  productItems: Array<{|    adjustedTax: Number {"typeId": "double"},     basePrice: Number {"typeId": "double"},     bonusProductLineItem: Boolean,     brand: String,     gift: Boolean,     grossPrice: Number {"typeId": "double"},     itemId: String,     itemText: String,     minOrderQuantity: Number {"typeId": "int"},     netPrice: Number {"typeId": "double"},     optionItems: Array<{|      basePrice: Number {"typeId": "double"},       gift: Boolean,       grossPrice: Number {"typeId": "double"},       itemText: String,       netPrice: Number {"typeId": "double"},       optionId: String,       optionValueId: String,       productId: String,       tax: Number {"typeId": "double"},       taxBasis: Number {"typeId": "double"}    |}>, 
+    position: Number {"typeId": "int"}, 
+    priceAfterItemDiscount: Number {"typeId": "double"}, 
+    priceAfterOrderDiscount: Number {"typeId": "double"}, 
+    productId: String, 
+    productName: String, 
+    quantity: Number {"typeId": "int"}, 
+    shipmentId: String, 
+    stepQuantity: Number {"typeId": "int"}, 
+    tax: Number {"typeId": "double"}, 
+    taxBasis: Number {"typeId": "double"}, 
+    taxRate: Number {"typeId": "double"}, 
+    c_brand: String, 
+    c_employeeDiscount: Number {"typeId": "double"}, 
+    c_options: String, 
+    c_originalPrice: Number {"typeId": "double"}, 
+    c_proratedPrice: Number {"typeId": "double"}
+  |}>, 
+  productSubTotal: Number {"typeId": "double"}, 
+  productTotal: Number {"typeId": "double"}, 
+  remoteHost: String, 
+  shipments: Array<{|    adjustedMerchandizeTotalTax: Number {"typeId": "double"},     adjustedShippingTotalTax: Number {"typeId": "double"},     gift: Boolean,     merchandizeTotalTax: Number {"typeId": "double"},     productSubTotal: Number {"typeId": "double"},     productTotal: Number {"typeId": "double"},     shipmentId: String,     shipmentNo: String,     shipmentTotal: Number {"typeId": "double"},     shippingAddress: {|      address1: String,       city: String,       countryCode: String,       firstName: String,       fullName: String,       lastName: String,       phone: String,       postalCode: String,       stateCode: String,       c_municipality: String,       c_outerNumber: String    |},     shippingMethod: {| id: String |},     shippingStatus: String,     shippingTotal: Number {"typeId": "double"},     shippingTotalTax: Number {"typeId": "double"},     taxTotal: Number {"typeId": "double"}  |}>, 
+  shippingItems: Array<{|    adjustedTax: Number {"typeId": "double"},     basePrice: Number {"typeId": "double"},     grossPrice: Number {"typeId": "double"},     itemId: String,     itemText: String,     netPrice: Number {"typeId": "double"},     priceAfterItemDiscount: Number {"typeId": "double"},     shipmentId: String,     tax: Number {"typeId": "double"},     taxBasis: Number {"typeId": "double"},     taxRate: Number {"typeId": "double"}  |}>, 
+  shippingStatus: String, 
+  shippingTotal: Number {"typeId": "double"}, 
+  shippingTotalTax: Number {"typeId": "double"}, 
+  siteId: String, 
+  status: String, 
+  taxation: String, 
+  taxTotal: Number {"typeId": "double"}, 
+  c_customPaymentMethod: String, 
+  c_detailedPaymentResponse: String, 
+  c_fluentOrderId: String, 
+  c_fulfillmentsStatus: String, 
+  c_installment: Number {"typeId": "double"}, 
+  c_isStorefrontUser: Boolean, 
+  c_orderPushedToFluent: Boolean, 
+  c_orderPushedToFluentDate: String, 
+  c_orderPushedToFluentError: Boolean, 
+  c_palacioFraudStatus: String, 
+  c_palacioStoreId: String, 
+  c_pdtaStatus: String, 
+  c_reimbursementPoints: Number {"typeId": "double"}, 
+  c_revolving: Number {"typeId": "double"}, 
+  c_rewardsPoints: Number {"typeId": "double"}, 
+  c_threatMetrixSessionID: String, 
+  c_ticketNumber: String
+|} {"example": "{\\\"adjustedMerchandizeTotalTax\\\":21377.94,\\\"adjustedShippingTotalTax\\\":0.00,\\\"billingAddress\\\":{\\\"address1\\\":\\\"Calle 42\\\",\\\"city\\\":\\\"ciudad de mexico\\\",\\\"countryCode\\\":\\\"MX\\\",\\\"firstName\\\":\\\"prueba\\\",\\\"fullName\\\":\\\"prueba prueba\\\",\\\"lastName\\\":\\\"prueba\\\",\\\"phone\\\":\\\"55 5435 4354\\\",\\\"postalCode\\\":\\\"02230\\\",\\\"stateCode\\\":\\\"santa b\u00E1rbara\\\",\\\"c_municipality\\\":\\\"azcapotzalco\\\",\\\"c_outerNumber\\\":\\\"234\\\"},\\\"confirmationStatus\\\":\\\"confirmed\\\",\\\"createdBy\\\":\\\"storefront\\\",\\\"creationDate\\\":\\\"2023-02-07T17:34:37.000Z\\\",\\\"currency\\\":\\\"MXN\\\",\\\"customerInfo\\\":{\\\"customerId\\\":\\\"bcPwsFQcuyNjeo2NBSleMahoaR\\\",\\\"customerName\\\":\\\"prueba prueba\\\",\\\"email\\\":\\\"daniel.hernandez@globant.com\\\",\\\"guest\\\":true},\\\"customerLocale\\\":\\\"es_MX\\\",\\\"exportStatus\\\":\\\"exported\\\",\\\"externalOrderNo\\\":\\\"301983 B\\\",\\\"invoiceNo\\\":\\\"00288291\\\",\\\"lastModified\\\":\\\"2023-02-07T21:48:37.000Z\\\",\\\"merchandizeTotalTax\\\":21377.94,\\\"notes\\\":[{\\\"createdBy\\\":\\\"storefront\\\",\\\"creationDate\\\":\\\"2023-02-07T17:34:41.000Z\\\",\\\"subject\\\":\\\"CREDIT CARD TYPE\\\",\\\"text\\\":\\\"DEBITOPROSAVISA\\\"},{\\\"createdBy\\\":\\\"storefront\\\",\\\"creationDate\\\":\\\"2023-02-07T17:34:42.000Z\\\",\\\"subject\\\":\\\"email-response\\\",\\\"text\\\":\\\"{\\\\\\\"requestId\\\\\\\":\\\\\\\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\\\\\\\",\\\\\\\"responses\\\\\\\":[{\\\\\\\"recipientSendId\\\\\\\":\\\\\\\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\\\\\\\",\\\\\\\"hasErrors\\\\\\\":false,\\\\\\\"messages\\\\\\\":[\\\\\\\"Queued\\\\\\\"]   }        ]}\\\"}],\\\"orderNo\\\":\\\"D1000080312\\\",\\\"orderTotal\\\":154990.00,\\\"paymentInstruments\\\":[{\\\"paymentCard\\\":{\\\"cardType\\\":\\\"DEBITOPROSAVISA\\\",\\\"creditCardExpired\\\":false,\\\"creditCardToken\\\":\\\"d48cbfc8285cad185d3a27f50db79f29\\\",\\\"expirationMonth\\\":12,\\\"expirationYear\\\":2025,\\\"holder\\\":\\\"prueba prueba\\\",\\\"maskedNumber\\\":\\\"************6684\\\",\\\"numberLastDigits\\\":\\\"6684\\\"},\\\"paymentInstrumentId\\\":\\\"da50d25bc936011d98b96ba968\\\",\\\"paymentMethodId\\\":\\\"CREDIT_CARD\\\",\\\"paymentTransaction\\\":{\\\"amount\\\":154990.00,\\\"transactionId\\\":\\\"216\\\"},\\\"c_accertifyRecommendationCode\\\":\\\"ACCEPT\\\",\\\"c_cardBinType\\\":\\\"14\\\",\\\"c_palacioCardWithChip\\\":false,\\\"c_paymentSchemas\\\":\\\"[{\\\\\\\"schemaId\\\\\\\":\\\\\\\"000000\\\\\\\",\\\\\\\"Amount\\\\\\\":\\\\\\\"154990.00\\\\\\\",\\\\\\\"Department\\\\\\\":\\\\\\\"10976\\\\\\\"}]\\\",\\\"c_paymentStatus\\\":\\\"APPROVED\\\",\\\"c_paymentType\\\":\\\"VISA\\\",\\\"c_sequenceNumber\\\":\\\"2161\\\"}],\\\"paymentStatus\\\":\\\"paid\\\",\\\"placeDate\\\":\\\"2023-02-07T17:34:42.046Z\\\",\\\"productItems\\\":[{\\\"adjustedTax\\\":688.97,\\\"basePrice\\\":999.00,\\\"bonusProductLineItem\\\":false,\\\"brand\\\":\\\"Conair\\\",\\\"gift\\\":false,\\\"grossPrice\\\":4995.00,\\\"itemId\\\":\\\"a69549874451049fc4128d9118\\\",\\\"itemText\\\":\\\"Secadora de Cabello Infiniti Pro 1875 W\\\",\\\"minOrderQuantity\\\":1,\\\"netPrice\\\":4306.03,\\\"optionItems\\\":[{\\\"basePrice\\\":0.00,\\\"gift\\\":false,\\\"grossPrice\\\":0.00,\\\"itemText\\\":\\\"Warranty name: SELECCIONA GARANT\u00CDA (OPCIONAL)\\\",\\\"netPrice\\\":0.00,\\\"optionId\\\":\\\"warranty\\\",\\\"optionValueId\\\":\\\"0\\\",\\\"productId\\\":\\\"0\\\",\\\"tax\\\":0.00,\\\"taxBasis\\\":0.00}],\\\"position\\\":1,\\\"priceAfterItemDiscount\\\":4995.00,\\\"priceAfterOrderDiscount\\\":4995.00,\\\"productId\\\":\\\"17806233\\\",\\\"productName\\\":\\\"Secadora de Cabello Infiniti Pro 1875 W\\\",\\\"quantity\\\":5,\\\"shipmentId\\\":\\\"me\\\",\\\"stepQuantity\\\":1,\\\"tax\\\":688.97,\\\"taxBasis\\\":4995.00,\\\"taxRate\\\":0.16,\\\"c_brand\\\":\\\"Conair\\\",\\\"c_employeeDiscount\\\":0.0,\\\"c_options\\\":\\\"[{\\\\\\\"optionId\\\\\\\":\\\\\\\"warranty\\\\\\\",\\\\\\\"sku\\\\\\\":null,\\\\\\\"description\\\\\\\":null,\\\\\\\"displayValue\\\\\\\":\\\\\\\"SELECCIONA GARANT\u00CDA (OPCIONAL)\\\\\\\",\\\\\\\"selectedValueId\\\\\\\":\\\\\\\"0\\\\\\\",\\\\\\\"htmlName\\\\\\\":\\\\\\\"dwopt_17806233_warranty\\\\\\\",\\\\\\\"value\\\\\\\":0}]\\\",\\\"c_originalPrice\\\":999.0,\\\"c_proratedPrice\\\":4995.0}],\\\"productSubTotal\\\":154990.00,\\\"productTotal\\\":154990.00,\\\"remoteHost\\\":\\\"189.217.101.63\\\",\\\"shipments\\\":[{\\\"adjustedMerchandizeTotalTax\\\":21377.94,\\\"adjustedShippingTotalTax\\\":0.00,\\\"gift\\\":false,\\\"merchandizeTotalTax\\\":21377.94,\\\"productSubTotal\\\":154990.00,\\\"productTotal\\\":154990.00,\\\"shipmentId\\\":\\\"me\\\",\\\"shipmentNo\\\":\\\"00350516\\\",\\\"shipmentTotal\\\":154990.00,\\\"shippingAddress\\\":{\\\"address1\\\":\\\"Calle 42\\\",\\\"city\\\":\\\"ciudad de mexico\\\",\\\"countryCode\\\":\\\"MX\\\",\\\"firstName\\\":\\\"Daniel\\\",\\\"fullName\\\":\\\"Daniel Hernandez\\\",\\\"lastName\\\":\\\"Hernandez\\\",\\\"phone\\\":\\\"55 5435 4354\\\",\\\"postalCode\\\":\\\"02230\\\",\\\"stateCode\\\":\\\"santa b\u00E1rbara\\\",\\\"c_municipality\\\":\\\"azcapotzalco\\\",\\\"c_outerNumber\\\":\\\"234\\\"},\\\"shippingMethod\\\":{\\\"id\\\":\\\"STANDARD\\\"},\\\"shippingStatus\\\":\\\"not_shipped\\\",\\\"shippingTotal\\\":0.00,\\\"shippingTotalTax\\\":0.00,\\\"taxTotal\\\":21377.94}],\\\"shippingItems\\\":[{\\\"adjustedTax\\\":0.00,\\\"basePrice\\\":0.00,\\\"grossPrice\\\":0.00,\\\"itemId\\\":\\\"fa49e1fe6e3ca0fcf36f881576\\\",\\\"itemText\\\":\\\"Shipping\\\",\\\"netPrice\\\":0.00,\\\"priceAfterItemDiscount\\\":0.00,\\\"shipmentId\\\":\\\"me\\\",\\\"tax\\\":0.00,\\\"taxBasis\\\":0.00,\\\"taxRate\\\":0.16}],\\\"shippingStatus\\\":\\\"not_shipped\\\",\\\"shippingTotal\\\":0.00,\\\"shippingTotalTax\\\":0.00,\\\"siteId\\\":\\\"palacio-MX\\\",\\\"status\\\":\\\"new\\\",\\\"taxation\\\":\\\"gross\\\",\\\"taxTotal\\\":21377.94,\\\"c_customPaymentMethod\\\":\\\"DEBITOPROSAVISA\\\",\\\"c_detailedPaymentResponse\\\":\\\"[{\\\\\\\"schemaId\\\\\\\":\\\\\\\"000000\\\\\\\",\\\\\\\"transactionDateTime\\\\\\\":\\\\\\\"2023-02-07T11:34:38.071Z\\\\\\\",\\\\\\\"externalTransactionCode\\\\\\\":\\\\\\\"216\\\\\\\",\\\\\\\"transactionID\\\\\\\":\\\\\\\"D1000080312\\\\\\\",\\\\\\\"originalTerminalId\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"originalTransactionID\\\\\\\":\\\\\\\"0\\\\\\\",\\\\\\\"transactionInfoCount\\\\\\\":\\\\\\\"0\\\\\\\",\\\\\\\"terminal\\\\\\\":\\\\\\\"286\\\\\\\",\\\\\\\"approval\\\\\\\":\\\\\\\"301983B\\\\\\\",\\\\\\\"responseCode\\\\\\\":\\\\\\\"005\\\\\\\",\\\\\\\"cardToken\\\\\\\":\\\\\\\"d48cbfc8285cad185d3a27f50db79f29\\\\\\\",\\\\\\\"responseDisplay\\\\\\\":\\\\\\\"TRANSACCIONAPROBADA\\\\\\\"}]\\\",\\\"c_fluentOrderId\\\":\\\"107391\\\",\\\"c_fulfillmentsStatus\\\":\\\"{\\\\\\\"test\\\\\\\":\\\\\\\"test\\\\\\\"}\\\",\\\"c_installment\\\":0.0,\\\"c_isStorefrontUser\\\":true,\\\"c_orderPushedToFluent\\\":true,\\\"c_orderPushedToFluentDate\\\":\\\"2023-02-07T17:34:42.000Z\\\",\\\"c_orderPushedToFluentError\\\":false,\\\"c_palacioFraudStatus\\\":\\\"ACCEPT\\\",\\\"c_palacioStoreId\\\":\\\"8010\\\",\\\"c_pdtaStatus\\\":\\\"NotApplicable\\\",\\\"c_reimbursementPoints\\\":0.0,\\\"c_revolving\\\":0.0,\\\"c_rewardsPoints\\\":0.0,\\\"c_threatMetrixSessionID\\\":\\\"30095a9c91deb88eea920a1d9e1675791212867\\\",\\\"c_ticketNumber\\\":\\\"801028602160702238\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="fulfillmentsStatus" format="json">
+      <types:shape format="weave" example="examples/fulfillmentStatus_example.json"><![CDATA[%dw 2.0
+
+type fulfillmentsStatus = {|
+  orderNumber: String, 
+  fullfilmentId: String, 
+  status: String, 
+  link: String
+|} {"example": "{\\\"orderNumber\\\":\\\"222221\\\",\\\"fullfilmentId\\\":\\\"23\\\",\\\"status\\\":\\\"CANCELED\\\",\\\"link\\\":\\\"https:\\/\\/palacio.hierro.mx\\\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#1aaa8021-50a8-433a-b852-765312556a7e">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="fulfillmentsStatus"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

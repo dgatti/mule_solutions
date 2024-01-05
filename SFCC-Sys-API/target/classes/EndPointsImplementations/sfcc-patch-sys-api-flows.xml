@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:oauth="http://www.mulesoft.org/schema/mule/oauth" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:module-logger="http://www.mulesoft.org/schema/mule/module-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/module-logger http://www.mulesoft.org/schema/mule/module-logger/current/mule-module-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/oauth http://www.mulesoft.org/schema/mule/oauth/current/mule-oauth.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+  <flow name="Update" doc:id="c70d28b1-a579-441f-b2be-cd4b461ed2c7" >
+    <logger level="INFO" doc:name="Logger" doc:id="b106ff95-82f5-48eb-a21d-00ce9158c0d5" message="#['TRACE_POINT: FLOW' ++ ', ' ++ 'MESSAGE: update-sfcc-sys-api  flow begin']"/>
+    <try doc:name="Try" doc:id="a4733595-8698-4074-99f2-037c88f06a7f" >
+      <until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="5b0332ea-e98b-4010-b17d-60e7d31e2ceb" millisBetweenRetries="${until.MsBwRetries}">
+      <http:request method="PATCH" doc:name="PATCH /orderNo" doc:id="d37c47e2-18a2-464a-9ea2-3ad50605afd2" config-ref="SFCC_HTTP_Request_configuration" path="${sfcc.order.path}/{orderNo}">
+        <http:uri-params><![CDATA[#[output application/java
+---
+{
+	orderNo : vars.orderId
+}]]]></http:uri-params>
+        <http:query-params><![CDATA[#[import p from Mule
+output application/java
+---
+{
+	siteId : p('sfcc.org.siteId') default '0'
+}]]]></http:query-params>
+        <http:response-validator>
+          <http:success-status-code-validator values="204" />
+        </http:response-validator>
+      </http:request>
+    </until-successful>
+      <error-handler >
+
+        <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ef1cbda5-8868-4031-8600-0dcd2c09f76b" type="HTTP:NOT_FOUND">
+          <set-payload value="#[null]" doc:name="Set Payload" doc:id="df597a29-e08f-4b39-9f5f-09debbf25865" />
+        </on-error-continue>
+                <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="de8dc9ec-4da9-481a-9de4-529c9db5de83" type="ANY">
+          <ee:transform doc:name="Transform Message" doc:id="62dcfdd7-24ce-4298-9bbc-8fa9f642ade8" >
+            <ee:message >
+            </ee:message>
+            <ee:variables >
+              <ee:set-variable variableName="errorCode" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  
+}]]></ee:set-variable>
+              <ee:set-variable variableName="errorMessage" ><![CDATA[%dw 2.0
+output application/java
+---
+"Schema error"]]></ee:set-variable>
+              <ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+400]]></ee:set-variable>
+            </ee:variables>
+          </ee:transform>
+        </on-error-propagate>
+      </error-handler>
+    </try>
+    <logger level="INFO" doc:name="Logger" doc:id="eec24b0c-e7b0-41de-b175-113894199670" message="#['TRACE_POINT: FLOW' ++ ', ' ++ 'MESSAGE: update-sfcc-sys-api  flow end']" />
+  </flow>
+</mule>

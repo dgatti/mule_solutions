@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:alert-management-api="http://www.mulesoft.org/schema/mule/alert-management-api" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/alert-management-api http://www.mulesoft.org/schema/mule/alert-management-api/current/mule-alert-management-api.xsd">
+<alert-management-api:config name="Alert_Management_API_Config" doc:name="Alert Management API Config" doc:id="9d168927-a92e-42c6-8f22-5289c0a9624a" />
+  <flow name="patch-flow" doc:id="09e0d271-4814-4b1d-b7ee-c8d7c609b0cc" >
+    <choice doc:name="Choice Check Change" doc:id="df23b692-53af-48b9-a1e6-29acde93f6c0">
+          <when expression="#[vars.changed.change.matches == false]">
+            <ee:transform doc:name="Transform Message Convertion To String" doc:id="451d7d17-4cb0-45a0-a497-60f80538b4fe">
+              <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+c_fulfillmentsStatus: write(payload,"application/json")]]></ee:set-payload>
+              </ee:message>
+            </ee:transform>
+            <try doc:name="Try" doc:id="13e9bbc1-83c4-4798-aef6-b285bdcf264f">
+              <until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="eab18c46-3ade-4c65-96ba-bd7ab4aadb31" millisBetweenRetries="${until.MsBwRetries}">
+                <http:request method="PATCH" doc:name="PATCH /orderNo" doc:id="1e42e929-34ae-4a9f-90c5-3df28fbe5331" config-ref="SFCC_HTTP_Request_configuration" path="${sfcc.order.path}/{orderNo}">
+                  <http:uri-params><![CDATA[#[output application/java
+---
+{
+	orderNo : vars.orderNumber
+}]]]></http:uri-params>
+                  <http:query-params><![CDATA[#[import p from Mule
+output application/java
+---
+{
+	siteId : p('sfcc.org.siteId') default '0'
+}]]]></http:query-params>
+                  <http:response-validator>
+                    <http:success-status-code-validator values="204" />
+                  </http:response-validator>
+                </http:request>
+              </until-successful>
+              <error-handler>
+                <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2d6f5d75-7588-4c6e-8e11-a41fe878b1ae" type="ANY">
+                  <logger level="ERROR" doc:name="Logger" doc:id="a5d21bab-24b2-49a9-901f-17f9025eb39f" />
+                  <alert-management-api:create-alert doc:name="Create alert" doc:id="25564424-0773-4045-86ef-858ae650c17b" config-ref="Alert_Management_API_Config">
+                    <alert-management-api:create-alert-request-data><![CDATA[#[%dw 2.0
+import p from Mule
+
+output application/json
+var mensageError = if (attributes.statusCode != 200) error.description else 'HTTP Connectivity Failed'
+---
+{
+	"appName": "SFCC-sys-API" default '',
+	"alertType": "Error",
+	"subject":"Failure calling the SFCC Api for the update order status",
+	"errorMessage": "Updated failed with error : " ++ (if(error != null) error.errorType.identifier ++':'++ error.description else mensageError),
+	"httpStatusCode":"500",
+	"sourceTimeStamp": now(),
+	"flowName": "sfcc-sys-api-push-status-update",
+	"eventId": correlationId
+ }]]]></alert-management-api:create-alert-request-data>
+                  </alert-management-api:create-alert>
+                </on-error-propagate>
+              </error-handler>
+            </try>
+          </when>
+          <otherwise>
+            <logger level="INFO" doc:name="Logger Updated Ended" doc:id="f3880ffa-b0eb-4cb2-8d18-70b90dadca5a" message="#['TRACE_POINT: FLOW' ++ ', ' ++ 'MESSAGE: Value has just updated, flow end']" category="com.elpalaciodehierro.api.sfcc.sys.eph" />
+          </otherwise>
+        </choice>
+    <anypoint-mq:ack doc:name="Ack" doc:id="b2c7b2e1-89ce-49e1-941a-35e91ac67ceb" config-ref="Anypoint_MQ_Config_Update_Status_Order" ackToken="#[vars.ackToken]" />
+    <logger level="DEBUG" doc:name="Logger Debug End" doc:id="35481bb2-ccdc-4fb8-9c68-f6888cbcba59" message="#[payload]" category="com.elpalaciodehierro.api.sfcc.sys.eph" />
+    <logger level="INFO" doc:name="Logger Info End" doc:id="f083a622-3af9-4d37-a77d-8fb4a36d0104" message="#['TRACE_POINT: FLOW' ++ ', ' ++ 'MESSAGE: update-sfcc-sys-api  flow end']" category="com.elpalaciodehierro.api.sfcc.sys.eph" />
+  </flow>
+  <flow name="UpdateProcess-flow" doc:id="2dd6e601-5a16-4465-ac62-a35ce369738c" >
+    <choice doc:name="Check payload is not empty" doc:id="055cc450-52c0-4a94-822c-b53e543b218c">
+      <when expression="#[isEmpty(payload)]">
+        <ee:transform doc:name="Transform Message isEmpty Patch" doc:id="a1f5efc4-6c07-4e55-b3ed-9601e657583f">
+          <ee:message />
+          <ee:variables>
+            <ee:set-variable variableName="errorCode"><![CDATA[%dw 2.0
+output application/java
+---
+
+"ORD_ERR_004"]]></ee:set-variable>
+            <ee:set-variable variableName="errorMessage"><![CDATA[%dw 2.0
+output application/java
+---
+"Not found values for this query"]]></ee:set-variable>
+            <ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+404]]></ee:set-variable>
+          </ee:variables>
+        </ee:transform>
+        <raise-error doc:name="Raise error" doc:id="af7623b9-366d-41d1-ad05-925527b610a4" type="SOURCE:EMPTY" description="Not found values for this query" />
+      </when>
+      <otherwise>
+        <try doc:name="Try" doc:id="029c8d01-49de-4d4c-a2d3-67d9bcc53219">
+          <ee:transform doc:name="Transform Message Update Status" doc:id="a7d41435-758b-4491-b98a-c48de4c9c9c2">
+      <ee:message>
+            <ee:set-payload><![CDATA[%dw 2.0
+
+output application/json
+
+var c_fulfillments = read((payload.c_fulfillmentsStatus default "[]"),"application/json") 
+
+---
+
+if (sizeOf(c_fulfillments) == 0) [vars.JSON_Input]
+		
+else
+	
+		(c_fulfillments filter $["fulfillmentId"] != vars.fulfillmentId) << vars.JSON_Input
+		
+	
+]]></ee:set-payload>
+      </ee:message>
+          <ee:variables>
+            <ee:set-variable variableName="c_fulfillments_original"><![CDATA[%dw 2.0
+output application/json
+---
+read((payload.c_fulfillmentsStatus default "[]"),"application/json") ]]></ee:set-variable>
+          </ee:variables>
+    </ee:transform>
+          <set-variable value="#[%dw 2.0&#10;import diff from dw::util::Diff&#10;&#10;output application/json&#10;---&#10;&#10;change: diff(vars.c_fulfillments_original, payload)]" doc:name="Changed?" doc:id="86b39c56-013a-45e6-8c0f-3c1a370951a6" variableName="changed" />
+          <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="0a96708a-60fd-4794-b41f-8886508ddda9">
+              <logger level="ERROR" doc:name="Logger" doc:id="91b7715c-055d-4fd0-bb84-823a6ee611db" message="#[payload]" category="com.elpalaciodehierro.api.sfcc.sys.eph" />
+              <ee:transform doc:name="Transform Message Error Patch" doc:id="a26e2ee3-5a9f-428b-9010-d2781047a399">
+                <ee:message>
+                </ee:message>
+                <ee:variables>
+                  <ee:set-variable variableName="errorCode"><![CDATA[%dw 2.0
+output application/java
+---
+"ORD_ERR_005"]]></ee:set-variable>
+                  <ee:set-variable variableName="errorMessage"><![CDATA[%dw 2.0
+output application/java
+---
+"Review json format"]]></ee:set-variable>
+                </ee:variables>
+              </ee:transform>
+            </on-error-propagate>
+          </error-handler>
+        </try>
+        <flow-ref doc:name="Flow Reference" doc:id="79eaba40-4369-4cd4-b6b1-d963dbf1ab49" name="patch-flow" />
+      </otherwise>
+    </choice>
+  </flow>
+  <flow name="validate-and-get-flow" doc:id="0ce4783b-a580-4b0a-a026-b5f4078e6737" >
+    <logger level="DEBUG" doc:name="Logger Debug Begin" doc:id="e2d42a5d-73ab-4a02-8e9b-712851b5362f" message="#[payload]" category="com.elpalaciodehierro.api.sfcc.sys.eph"/>
+    <try doc:name="Try" doc:id="bc5cc6ac-148e-4435-9b65-3e37d9c789b4" >
+      <ee:transform doc:name="Transform Message JSON_Input" doc:id="ff60b6ac-626d-4ed1-a72a-5a73cd06f709">
+      <ee:message>
+      </ee:message>
+      <ee:variables>
+        <ee:set-variable variableName="status"><![CDATA[%dw 2.0
+output application/json
+---
+payload.status]]></ee:set-variable>
+        <ee:set-variable variableName="orderNumber"><![CDATA[%dw 2.0
+output application/json
+---
+payload.orderNumber]]></ee:set-variable>
+        <ee:set-variable variableName="fulfillmentId"><![CDATA[%dw 2.0
+output application/json
+---
+payload.fulfillmentId]]></ee:set-variable>
+        <ee:set-variable variableName="JSON_Input"><![CDATA[%dw 2.0
+output application/json
+---
+payload - "orderNumber"]]></ee:set-variable>
+      </ee:variables>
+    </ee:transform>
+      <error-handler >
+        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="dfc203d7-4e0b-487c-83af-0abb5fa9cedc">
+          <ee:transform doc:name="Transform Message Error Input" doc:id="9e15ab45-9a0f-4f93-996c-540e4b21b31c" >
+            <ee:message >
+            </ee:message>
+            <ee:variables >
+              <ee:set-variable variableName="errorCode" ><![CDATA[%dw 2.0
+output application/java
+---
+"ORD_ERR_002"]]></ee:set-variable>
+              <ee:set-variable variableName="errorMessage" ><![CDATA[%dw 2.0
+output application/java
+---
+"JSON Error, review format and values"]]></ee:set-variable>
+            </ee:variables>
+          </ee:transform>
+        </on-error-propagate>
+      </error-handler>
+    </try>
+    <set-variable value="#[attributes.ackToken]" doc:name="ackToken" doc:id="0c35796f-0ac7-454b-a5c3-e7328cb5c074" variableName="ackToken"/>
+    <until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="0ff7019b-9721-4081-9ccf-7a6f3354bade" millisBetweenRetries="${until.MsBwRetries}">
+      <try doc:name="Try" doc:id="c90814f6-ca16-46a3-8b07-27d7d6aacd19">
+        <http:request method="GET" doc:name="GET /orderNo" doc:id="66e30356-af9b-4623-a7dd-872c2c334532" config-ref="SFCC_HTTP_Request_configuration" path="${sfcc.order.path}/{orderNo}">
+      <http:body><![CDATA[#[null]]]></http:body>
+      <http:uri-params><![CDATA[#[output application/java
+---
+{
+	orderNo : vars.orderNumber
+}]]]></http:uri-params>
+      <http:query-params><![CDATA[#[import p from Mule
+output application/java
+---
+{
+	siteId : p('sfcc.org.siteId') default '0'
+}]]]></http:query-params>
+      <http:response-validator>
+        <http:success-status-code-validator values="200" />
+      </http:response-validator>
+    </http:request>
+        <error-handler>
+          <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="2f348db1-c58a-4d75-8f1c-ff7d8dd7fda1" type="HTTP:NOT_FOUND">
+            <set-payload value="#[null]" doc:name="Set Payload" doc:id="55b20d1d-7efe-4f0d-9d9c-f0a36be5e4df" />
+          </on-error-continue>
+          <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a7466721-b7ec-4f28-b2d4-701feec8bf85">
+            <ee:transform doc:name="Transform Message Get Error" doc:id="e18b9a29-6525-4a40-ac75-10634278f651">
+              <ee:message />
+              <ee:variables>
+                <ee:set-variable variableName="errorCode"><![CDATA[%dw 2.0
+output application/java
+---
+
+"ORD_ERR_003"]]></ee:set-variable>
+                <ee:set-variable variableName="errorMessage"><![CDATA[%dw 2.0
+output application/java
+---
+"Not found ' Service Unavailable"]]></ee:set-variable>
+                <ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+              </ee:variables>
+            </ee:transform>
+          </on-error-propagate>
+        </error-handler>
+      </try>
+    </until-successful>
+    <flow-ref doc:name="Flow Reference" doc:id="1577d547-0e21-4b86-8323-dc0270946c3d" name="UpdateProcess-flow" />
+  </flow>
+  <flow name="mq_push_update_status" doc:id="e9b40a7b-f51f-46de-8213-c55685cd77fe" >
+    <anypoint-mq:subscriber doc:name="Subscriber Order Status" doc:id="59a26c7d-e42b-4d8e-80cb-0fc130b905fb" config-ref="Anypoint_MQ_Config_Update_Status_Order" destination="${anypoint-mq.queue.push}" acknowledgementMode="MANUAL" acknowledgementTimeout="${anypoint-mq.ack.timeOut}">
+      <redelivery-policy maxRedeliveryCount="3" />
+      <reconnect />
+      <anypoint-mq:subscriber-type >
+        <anypoint-mq:polling fetchSize="${anypoint-mq.config.fetchSize}">
+          <scheduling-strategy >
+            <fixed-frequency frequency="${anypoint-mq.config.frecuency}"/>
+          </scheduling-strategy>
+        </anypoint-mq:polling>
+      </anypoint-mq:subscriber-type>
+      <anypoint-mq:circuit-breaker tripTimeout="${anypoint-mq.circuit-breaker.tripTimeout}" onErrorTypes="${anypoint-mq.circuit-breaker.onErrorTypes}" errorsThreshold="${anypoint-mq.circuit-breaker.errorsThreshold}"/>
+    </anypoint-mq:subscriber>
+    <logger level="INFO" doc:name="Logger begin flow" doc:id="3e065079-f968-4cd7-9d4b-3e8177714287" message="#['TRACE_POINT: FLOW' ++ ', ' ++ 'MESSAGE: update-sfcc-sys-api  flow begin']" category="com.elpalaciodehierro.api.sfcc.sys.eph"/>
+    <flow-ref doc:name="orderProcessorFlow" doc:id="8902bace-5d71-44a3-8bcb-6a842191e302" name="validate-and-get-flow"/>
+    <error-handler >
+      <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="054ef897-067a-4103-8641-288c97629905" >
+        <logger level="ERROR" doc:name="Error-Log" doc:id="6c5aa33e-b0f8-4303-bbf2-073e2e1da6c9" message="#[output application/json&#10;---&#10;{&#10;    'message-log': 'TRACE_POINT:END, MESSAGE:Exception occured in mq-suscriber-order-status Flow, Sending NACK to subscriber',&#10;	&quot;errorDescription&quot;: error.description default '',&#10;    &quot;messageId&quot;: (attributes.messageId default '') as String&#10;}]" category="com.elpalaciodehierro.api.proc.eph" />
+        <ee:transform doc:name="Transform Message Get Error" doc:id="503154d7-7faa-4142-b74b-c898b2000be8">
+              <ee:message />
+              <ee:variables>
+                <ee:set-variable variableName="errorCode"><![CDATA[%dw 2.0
+output application/java
+---
+
+"ORD_ERR_003"]]></ee:set-variable>
+                <ee:set-variable variableName="errorMessage"><![CDATA[%dw 2.0
+output application/java
+---
+"Not found ' Service Unavailable"]]></ee:set-variable>
+                <ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+              </ee:variables>
+            </ee:transform>
+        <anypoint-mq:nack doc:name="Manual Not Acknowledgment" doc:id="49e762ae-62a3-433c-8891-dc15009ad0fc" config-ref="Anypoint_MQ_Config_Update_Status_Order" ackToken="#[vars.ackToken]">
+          <reconnect />
+        </anypoint-mq:nack>
+      </on-error-propagate>
+    </error-handler>
+  </flow>
+  <flow name="post_push_update_status" doc:id="e6484547-5895-4357-94f7-9f4c83a9a15f" >
+    <flow-ref doc:name="orderProcessorFlow" doc:id="1aaa8021-50a8-433a-b852-765312556a7e" name="validate-and-get-flow"/>
+  </flow>
+</mule>

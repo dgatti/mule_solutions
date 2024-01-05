@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:oauth="http://www.mulesoft.org/schema/mule/oauth"
+	xmlns:module-logger="http://www.mulesoft.org/schema/mule/module-logger"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/module-logger http://www.mulesoft.org/schema/mule/module-logger/current/mule-module-logger.xsd
+http://www.mulesoft.org/schema/mule/oauth http://www.mulesoft.org/schema/mule/oauth/current/mule-oauth.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+
+
+	<!-- Properties are loaded in the order of precedence: -->
+	<!-- 1) Secure environment properties -->
+	<!-- 2) Regular environment properties -->
+	<!-- 3) Common regular properties -->
+
+	<!-- Secure properties -->
+	<secure-properties:config
+		name="Secret"
+		doc:name="Secured Environment Configuration properties"
+		doc:id="0b28bb51-ccf8-4666-81bd-b8788af63bbc"
+		file="config/secured/${mule.env}.yaml" key="${mule.key}"
+		doc:description="Environment specific secure properties">
+		<secure-properties:encrypt
+			algorithm="Blowfish" />
+	</secure-properties:config>
+
+	<!-- Non-secure properties -->
+	<configuration-properties
+		doc:name="Environment Configuration properties"
+		doc:description="Environment specific regular properties"
+		doc:id="47ad52ae-6d14-4b13-96d2-b4d49d8b0009"
+		file="config/${mule.env}.yaml" />
+
+	<!-- Common Regular properties -->
+	<configuration-properties
+		doc:name="Common Configuration properties"
+		doc:description="Common - Environment independent regular properties"
+		doc:id="a353c24b-f3a0-45ad-bc6c-d72ac14ce9b9"
+		file="config/common.yaml" />
+
+	<http:listener-config
+		name="api-httpListenerConfig" doc:name="HTTP Listener config"
+		doc:id="b0e47a24-188e-4a99-a0c3-ff854a52438a">
+		<http:listener-connection host="0.0.0.0"
+			port="${https.port}" protocol="HTTPS" tlsContext="TLS_Context" />
+	</http:listener-config>
+	<tls:context name="TLS_Context" doc:name="TLS Context"
+		doc:id="35f87954-6e81-4ebc-84b0-dec94af5492d">
+		<tls:key-store path="${tls.keystorePath}"
+			password="${secure::tls.password}"
+			keyPassword="${secure::tls.keyPassword}" type="${tls.type}"
+			alias="${tls.alias}" />
+	</tls:context>
+	<api-gateway:autodiscovery apiId="${api.id}"
+		ignoreBasePath="true" doc:name="API Autodiscovery"
+		doc:id="c442e978-de0f-465b-85b7-feeab7076b8f" flowRef="sfcc-sys-api-main" />
+  <import doc:name="Import" doc:id="bb1b7642-3921-469b-ae2b-5a7fcbe097d7" file="ph-error-handler.xml" />
+  <http:request-config name="SFCC_HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="7a4e5e35-94e6-4a35-abcf-131274cd9094" basePath="${sfcc.order.base_path}" >
+    <http:request-connection protocol="HTTPS" host="${sfcc.order.host}" >
+      <reconnection >
+        <reconnect count="3" blocking="false" />
+      </reconnection>
+      <http:authentication >
+        <oauth:client-credentials-grant-type clientId="${sfcc.org.clientId}" clientSecret="${secure::sfcc.org.clientSecret}" scopes="${sfcc.org.scope}" tokenUrl="https://${sfcc.token.host}${sfcc.token.base_path}${sfcc.token.path}" refreshTokenWhen="true"/>
+      </http:authentication>
+    </http:request-connection>
+  </http:request-config>
+  <configuration-properties doc:name="Configuration properties" doc:id="a1b4de9f-aa90-4c6e-a83b-bb9fa278f105" file="config/secured/${mule.env}.yaml" />
+  <anypoint-mq:config name="Anypoint_MQ_Config_Update_Status_Order" doc:name="Anypoint MQ Config" doc:id="af7f301f-dfe8-419a-ba79-214f42607643" >
+    <anypoint-mq:connection url="${anypoint-mq.connection.url}" clientId="${anypoint-mq.connection.clientId}" clientSecret="${secure::anypoint-mq.connection.clientSecret}" />
+  </anypoint-mq:config>
+
+</mule>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+  <flow name="Get" doc:id="906fcdb7-4a02-41c7-b766-58264e148041" >
+    <logger level="INFO" doc:name="Logger" doc:id="e47c28a7-d233-4682-98e7-2194d71c14da" message="#['TRACE_POINT: FLOW' ++ ', ' ++ 'MESSAGE: get-sfcc-sys-api  flow begin']" />
+    <until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="78593744-7c46-4ad3-ac02-6a3ddaf08f20" millisBetweenRetries="${until.MsBwRetries}" >
+      <try doc:name="Try" doc:id="d7c6fe39-4966-4d98-881b-3be8892b9a25" >
+        <http:request method="GET" doc:name="GET /orderNo" doc:id="b58642d1-e85c-4ab4-93d7-00abf85422e1" config-ref="SFCC_HTTP_Request_configuration" path="${sfcc.order.path}/{orderNo}" >
+          <http:body ><![CDATA[#[null]]]></http:body>
+          <http:uri-params ><![CDATA[#[output application/java
+---
+{
+	orderNo : vars.orderId
+}]]]></http:uri-params>
+          <http:query-params ><![CDATA[#[import p from Mule
+output application/java
+---
+{
+	siteId : p('sfcc.org.siteId') default '0'
+}]]]></http:query-params>
+          <http:response-validator >
+            <http:success-status-code-validator values="200" />
+          </http:response-validator>
+        </http:request>
+        <error-handler >
+          <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="4c711a5b-921e-4a10-9190-f683bc79968e" type="HTTP:FORBIDDEN, HTTP:NOT_FOUND" >
+            <set-payload value="#[null]" doc:name="Set Payload" doc:id="a50b8557-8882-4b53-8405-950aafb9cbf3" />
+          </on-error-continue>
+          <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="af9f2a78-dc76-446c-8c60-c44d0a5b5add">
+            <ee:transform doc:name="Transform Message" doc:id="34777fa5-2fde-4061-9b6f-59c79a309e5a" >
+              <ee:message />
+              <ee:variables >
+                <ee:set-variable variableName="errorCode" ><![CDATA[%dw 2.0
+output application/java
+---
+
+"ORDER_ERR_002"]]></ee:set-variable>
+                <ee:set-variable variableName="errorMessage" ><![CDATA[%dw 2.0
+output application/java
+---
+"Not found ' Service Unavailable"]]></ee:set-variable>
+                <ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+              </ee:variables>
+            </ee:transform>
+          </on-error-propagate>
+        </error-handler>
+      </try>
+    </until-successful>
+    <choice doc:name="Check payload is not empty" doc:id="2bb8188e-4e03-454b-a0fe-9682e5a34ecf" >
+      <when expression="#[isEmpty(payload)]" >
+        <ee:transform doc:name="Transform Message" doc:id="18b4fc09-b47e-4bc2-955e-1cba13e5ac3d" >
+          <ee:message />
+          <ee:variables >
+            <ee:set-variable variableName="errorCode" ><![CDATA[%dw 2.0
+output application/java
+---
+
+"ORDER_ERR_001"]]></ee:set-variable>
+            <ee:set-variable variableName="errorMessage" ><![CDATA[%dw 2.0
+output application/java
+---
+"Not found values for this query"]]></ee:set-variable>
+            <ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+404]]></ee:set-variable>
+          </ee:variables>
+        </ee:transform>
+        <raise-error doc:name="Raise error" doc:id="f6ff8c50-cbd5-4c92-9cdb-ca0ef74d8c67" type="SOURCE:EMPTY" description="Not found values for this query" />
+      </when>
+      <otherwise >
+        <logger level="DEBUG" doc:name="Logger" doc:id="5152272f-0ee6-4917-9b31-f56e81e7fe7e" message="#[payload]"/>
+        <ee:transform doc:name="Order to JSON" doc:id="4d4d3e4c-2807-42eb-a1ea-81cdb0d857b7" >
+          <ee:message >
+            <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+]]></ee:set-payload>
+          </ee:message>
+        </ee:transform>
+      </otherwise>
+    </choice>
+    <logger level="INFO" doc:name="Logger1" doc:id="f86ade5b-5c4a-48ad-9c8e-c736575b0e2a" message="#['TRACE_POINT: FLOW' ++ ', ' ++ 'MESSAGE: get-sfcc-sys-api  flow ends']" />
+  </flow>
+</mule>

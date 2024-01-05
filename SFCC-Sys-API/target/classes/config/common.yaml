@@ -1,0 +1,30 @@
+https:
+  port: "8082"
+
+api:
+  id: ""
+  basePath: "api/*"
+  
+healthcheck.api.id: ""
+
+tls:
+  keystorePath: "keystore.jks"
+  type: "JKS"
+  alias: ""
+'secure::tls':
+  password: "QM83G3QYEK3Y"
+  keyPassword: "QM83G3QYEK3Y"
+  
+until:
+  MaxRetries: "3"
+  MsBwRetries: "1000"
+  
+    
+anypoint-mq:
+  circuit-breaker:
+    tripTimeout: "600000" #MilliSeconds
+    errorsThreshold: "5"
+    onErrorTypes: "HTTP:TIMEOUT,HTTP:CONNECTIVITY,HTTP:RETRY_EXHAUSTED,HTTP:SERVICE_UNAVAILABLE,HTTP:TOO_MANY_REQUESTS,HTTP:GATEWAY_TIMEOUT,MULE:RETRY_EXHAUSTED,HTTP:INTERNAL_SERVER_ERROR"
+  
+  
+

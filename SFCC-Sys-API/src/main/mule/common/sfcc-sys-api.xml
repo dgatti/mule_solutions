@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <apikit:config name="sfcc-sys-api-config" api="resource::48335c82-2ddc-455c-aafb-8c7e3a61fb77:sfcc-sys-api:1.0.7:raml:zip:sfcc-sys-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="sfcc-sys-api-main">
+        <http:listener config-ref="api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[if(vars.errorStatusCode?) vars.errorStatusCode else if(vars.httpStatus?) vars.httpStatus else 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="sfcc-sys-api-config" />
+        <error-handler ref="ph-error-handler" />
+    </flow>
+    <flow name="get:\health:sfcc-sys-api-config">
+        <flow-ref doc:name="Flow Reference" doc:id="01219875-92bd-4f31-a06b-0cba26e5a67d" name="healthcheck-main-flow" />
+    </flow>
+    <flow name="patch:\v1\sys\order\status\orders\(orderId):application\json:sfcc-sys-api-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="orderId">attributes.uriParams.'orderId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="50bced95-0405-4445-a7ab-0acb3b3ff032" name="Update" />
+    </flow>
+    <flow name="get:\v1\sys\order\status\orders\(orderId):sfcc-sys-api-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="orderId">attributes.uriParams.'orderId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="b7db23f9-d8fb-4398-a206-7d29eacf91ad" name="Get" />
+    </flow>
+    <flow name="post:\v1\sys\order\status\orders\update:application\json:sfcc-sys-api-config">
+    <flow-ref doc:name="Flow Reference" doc:id="a89f0997-6e84-4263-9316-7f4d59a8725d" name="post_push_update_status"/>
+    </flow>
+</mule>

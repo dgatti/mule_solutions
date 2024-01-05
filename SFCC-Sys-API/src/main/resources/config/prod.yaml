@@ -1,0 +1,5 @@
+# API Configurations
+api:
+  id: "00000001"
+
+healthcheck.api.id: "00000001"

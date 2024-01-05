@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" 
+xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" 
+xmlns="http://www.mulesoft.org/schema/mule/core" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xmlns:http-policy="http://www.mulesoft.org/schema/mule/http-policy" 
+xmlns:http-transform="http://www.mulesoft.org/schema/mule/http-policy-transform" 
+xmlns:validation="http://www.mulesoft.org/schema/mule/validation" 
+xmlns:os="http://www.mulesoft.org/schema/mule/os" 
+xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+
+xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/ee/dw 
+  http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd 
+  http://www.mulesoft.org/schema/mule/ee/core 
+  http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+  http://www.mulesoft.org/schema/mule/http 
+  http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+  http://www.mulesoft.org/schema/mule/core 
+  http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+  http://www.mulesoft.org/schema/mule/http-policy 
+  http://www.mulesoft.org/schema/mule/http-policy/current/mule-http-policy.xsd 
+  
+
+  http://www.mulesoft.org/schema/mule/http-policy-transform 
+  http://www.mulesoft.org/schema/mule/http-policy-transform/current/mule-http-policy-transform.xsd 
+  
+
+  http://www.mulesoft.org/schema/mule/validation 
+  http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+  http://www.mulesoft.org/schema/mule/os 
+  http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">  
+    
+     <!-- Crea request config y toma los parametros de entrada indicados por las llaves-->
+     <http:request-config name="HTTP_Request_configuration" basePath="/shopper/auth/v1/organizations/{{{organizationId}}}/oauth2">
+      <http:request-connection protocol="HTTPS" host="{{{shortCode}}}.api.commercecloud.salesforce.com" />
+    </http:request-config>
+    <http-policy:proxy name="{{{policyId}}}-custom-policy">
+        <http-policy:source>
+        
+        <!-- Un try dinámico en el que está contenido todo el flujo, cualquier evento de la policy que falle, sale por error de este try -->
+            <try doc:name="Try" doc:id="4290221d-43dd-4151-948d-58629134a462" >
+                
+                <!-- Valida que los parámetros de entrada se pasen en la llamada, token y username deben pasarse en el header de la llamada a la API y la policy los captura, pero figuran como parametros de esntrada de la policy porque el nombre puede ser variable, se puede llamar de otra forma que no sea token y username -->
+                <validation:is-not-blank-string doc:name="Validate Token" doc:id="edb23f47-db79-47d7-83fa-2fb6082244fd" value="#[attributes.headers['{{{tokenHeader}}}']]" message="Token is required" />
+                {{#if evaluateUsername}}
+                <validation:is-not-blank-string doc:name="Validate Username" doc:id="7a68d875-9277-4f19-b849-241389a8de1e" value="#[attributes.headers['{{{usernameHeader}}}']]" message="Username is required" />
+                {{/if}}
+                
+                <!-- Crea las variables correspondientes, Input, Authorization (los transforma a base64 -->
+                <ee:transform doc:name="Input Variables" doc:id="dfb3627a-6575-4305-bad1-b786c5f46b0e" >
+                    <ee:message ></ee:message>
+                    <ee:variables >
+                        <ee:set-variable variableName="inputVariables" ><![CDATA[%dw 2.0
+                    output application/json
+                    ---
+                    {
+                        token: attributes.headers."{{{tokenHeader}}}",
+                        username: attributes.headers."{{{usernameHeader}}}"
+                    }]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+                <ee:transform doc:name="Create Authorization" doc:id="55bbed90-12b7-4284-a273-bc56400fbbc1" >
+                    <ee:message />
+                    <ee:variables >
+                        <ee:set-variable variableName="authHeader" ><![CDATA[%dw 2.0
+                    output application/java
+                    import * from dw::core::Binaries
+                    ---
+                    toBase64('{{{clientId}}}:{{{clientSecret}}}')]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+                
+                <!-- Hace el erquest a la API SFCC introspectToken pasando en la llamada el Auth en el header y token en el body -->
+                <http:request method="POST" config-ref="HTTP_Request_configuration" path="/introspect" target="introspectToken">
+                      <http:body><![CDATA[#[output application/x-www-form-urlencoded
+                            ---
+                            {
+                                token: vars.inputVariables.token,
+                                token_type_hint: 'access_token'
+                            }]]]></http:body>
+                      <http:headers><![CDATA[#[output application/java
+                            ---
+                            {
+                                "Authorization" : "Basic " ++ vars.authHeader
+                            }]]]></http:headers>
+                    <http:response-validator>
+                        <http:success-status-code-validator values="200" />
+                    </http:response-validator>
+                </http:request>
+                
+                <!-- Se pueden usar choise anidados pero se usaron dos validation is true, uno de ellos valida active = True en el response para el token que se paso en la llamda 
+                        El otro validation, si el token está ok, valida que el username sea el correcto -->
+                <validation:is-true doc:name="Is token active?" doc:id="8e5373d3-a672-438b-8108-13e8957b893b" expression="#[vars.introspectToken.active]" message="Token inactive"/>
+                {{#if evaluateUsername}}
+                <validation:is-true doc:name="Is token related to request username?" doc:id="2045fa03-a212-4da0-9bb7-e9321658ed4b" expression="#[vars.inputVariables.username == vars.introspectToken.username]" message="Token is not related to request username"/>
+                {{/if}}
+                
+                <!-- Si las validaciones son correctas, la policy deja pasar la llamada, de lo contrario la aplica y retorna un error -->
+                <http-policy:execute-next/>
+                <error-handler >
+                    <on-error-propagate enableNotifications="false" logException="false" doc:name="On Error Propagate" doc:id="5612c660-69f2-4769-a535-758c599dd3b3" >
+                        <logger level="ERROR" doc:name="Log Error" doc:id="3d5aba26-be06-46d8-b7f3-0809923f97fd" message="#[&quot;Error: &quot; ++ (error.description default '')]"/>
+                        <ee:transform doc:name="Build Output" doc:id="ca047859-b251-4b28-ba05-8d892fda50eb">
+                            <ee:message>
+                                <ee:set-payload><![CDATA[%dw 2.0
+                                    output application/json
+                                    ---
+                                    {error: error.description default 'Default message for policy failed'}]]></ee:set-payload>
+                              </ee:message>
+                        </ee:transform>
+                        <http-transform:set-response statusCode="401">
+                            <http-transform:body>#[payload]</http-transform:body>
+                            <http-transform:headers>#[attributes.headers]</http-transform:headers>
+                        </http-transform:set-response>
+                    </on-error-propagate>
+                </error-handler>
+            </try>
+        </http-policy:source>
+    </http-policy:proxy>
+</mule>

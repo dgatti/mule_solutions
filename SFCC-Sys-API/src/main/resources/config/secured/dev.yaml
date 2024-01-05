@@ -1,0 +1,14 @@
+tls:
+  password: "QM83G3QYEK3Y"
+  keyPassword: "QM83G3QYEK3Y"
+
+sfcc:
+  org:
+    clientSecret: "![tbJIYRWRj6wdbEyjkqY+zA==]"
+    
+      #clientSecret: "v[5ntM#A$H"   tbJIYRWRj6wdbEyjkqY+zA==
+      #Client secret encriptada en https://secure-properties-api.us-e1.cloudhub.io/ Blowfish - CBC - Key: elpalacio
+    
+anypoint-mq:
+  connection:
+    clientSecret: "![BfOvIeoBqd4yPp/62hiGxGreEEdFS4+U4eWTSeo4sUHu9u4h4UH6dA==]"

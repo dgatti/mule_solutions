@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="sfcc-sys-api-push-order-status-test-suite.xml" />
+  <munit:test name="sfcc-sys-api-push-order-status-test-suite-validate-and-get-flowTest-happy-way" doc:id="4918b3f9-e6d5-4488-b933-f27d08b8117d" description="Test">
+    <munit:behavior >
+      <munit-tools:spy doc:name="Spy" doc:id="6d1fdf06-453d-4ad3-bd0e-50168214c8c0" processor="ee:transform">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message JSON_Input" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="ff60b6ac-626d-4ed1-a72a-5a73cd06f709" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="06b5ab22-e469-48e2-9cc3-68787b082ee3" actual="#[vars.orderNumber != '' or vars.orderNumber != null]" expected="#[true]"/>
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="a74bd6c3-26df-4ada-89bf-2178b91b1ab1" processor="http:request">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="GET" attributeName="method" />
+          <munit-tools:with-attribute whereValue="GET /orderNo" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="66e30356-af9b-4623-a7dd-872c2c334532" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="SFCC_HTTP_Request_configuration" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+        <munit-tools:then-return >
+          <munit-tools:payload value='#[{&#10;    "adjustedMerchandizeTotalTax": 21377.94,&#10;    "adjustedShippingTotalTax": 0.00,&#10;    "billingAddress": {&#10;        "address1": "Calle 42",&#10;        "city": "ciudad de mexico",&#10;        "countryCode": "MX",&#10;        "firstName": "prueba",&#10;        "fullName": "prueba prueba",&#10;        "lastName": "prueba",&#10;        "phone": "55 5435 4354",&#10;        "postalCode": "02230",&#10;        "stateCode": "santa bárbara",&#10;        "c_municipality": "azcapotzalco",&#10;        "c_outerNumber": "234"&#10;    },&#10;    "confirmationStatus": "confirmed",&#10;    "createdBy": "storefront",&#10;    "creationDate": "2023-02-07T17:34:37.000Z",&#10;    "currency": "MXN",&#10;    "customerInfo": {&#10;        "customerId": "bcPwsFQcuyNjeo2NBSleMahoaR",&#10;        "customerName": "prueba prueba",&#10;        "email": "daniel.hernandez@globant.com",&#10;        "guest": true&#10;    },&#10;    "customerLocale": "es_MX",&#10;    "exportStatus": "exported",&#10;    "externalOrderNo": "301983 B",&#10;    "invoiceNo": "00288291",&#10;    "lastModified": "2023-03-06T19:55:06.531Z",&#10;    "merchandizeTotalTax": 21377.94,&#10;    "notes": [&#10;        {&#10;            "createdBy": "storefront",&#10;            "creationDate": "2023-02-07T17:34:41.000Z",&#10;            "subject": "CREDIT CARD TYPE",&#10;            "text": "DEBITOPROSAVISA"&#10;        },&#10;        {&#10;            "createdBy": "storefront",&#10;            "creationDate": "2023-02-07T17:34:42.000Z",&#10;            "subject": "email-response",&#10;            "text": "{\"requestId\":\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\",\"responses\":[{\"recipientSendId\":\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\",\"hasErrors\":false,\"messages\":[\"Queued\"]}]}"&#10;        }&#10;    ],&#10;    "orderNo": "D1000080312",&#10;    "orderTotal": 154990.00,&#10;    "paymentInstruments": [&#10;        {&#10;            "paymentCard": {&#10;                "cardType": "DEBITOPROSAVISA",&#10;                "creditCardExpired": false,&#10;                "creditCardToken": "d48cbfc8285cad185d3a27f50db79f29",&#10;                "expirationMonth": 12,&#10;                "expirationYear": 2025,&#10;                "holder": "prueba prueba",&#10;                "maskedNumber": "************6684",&#10;                "numberLastDigits": "6684"&#10;            },&#10;            "paymentInstrumentId": "da50d25bc936011d98b96ba968",&#10;            "paymentMethodId": "CREDIT_CARD",&#10;            "paymentTransaction": {&#10;                "amount": 154990.00,&#10;                "transactionId": "216"&#10;            },&#10;            "c_accertifyRecommendationCode": "ACCEPT",&#10;            "c_cardBinType": "14",&#10;            "c_palacioCardWithChip": false,&#10;            "c_paymentSchemas": "[{\"schemaId\":\"000000\",\"Amount\":\"154990.00\",\"Department\":\"10976\"}]",&#10;            "c_paymentStatus": "APPROVED",&#10;            "c_paymentType": "VISA",&#10;            "c_sequenceNumber": "2161"&#10;        }&#10;    ],&#10;    "paymentStatus": "paid",&#10;    "placeDate": "2023-02-07T17:34:42.046Z",&#10;    "productItems": [&#10;        {&#10;            "adjustedTax": 688.97,&#10;            "basePrice": 999.00,&#10;            "bonusProductLineItem": false,&#10;            "brand": "Conair",&#10;            "gift": false,&#10;            "grossPrice": 4995.00,&#10;            "itemId": "a69549874451049fc4128d9118",&#10;            "itemText": "Secadora de Cabello Infiniti Pro 1875 W",&#10;            "minOrderQuantity": 1,&#10;            "netPrice": 4306.03,&#10;            "optionItems": [&#10;                {&#10;                    "basePrice": 0.00,&#10;                    "gift": false,&#10;                    "grossPrice": 0.00,&#10;                    "itemText": "Warranty name: SELECCIONA GARANTÍA (OPCIONAL)",&#10;                    "netPrice": 0.00,&#10;                    "optionId": "warranty",&#10;                    "optionValueId": "0",&#10;                    "productId": "0",&#10;                    "tax": 0.00,&#10;                    "taxBasis": 0.00&#10;                }&#10;            ],&#10;            "position": 1,&#10;            "priceAfterItemDiscount": 4995.00,&#10;            "priceAfterOrderDiscount": 4995.00,&#10;            "productId": "17806233",&#10;            "productName": "Secadora de Cabello Infiniti Pro 1875 W",&#10;            "quantity": 5,&#10;            "shipmentId": "me",&#10;            "stepQuantity": 1,&#10;            "tax": 688.97,&#10;            "taxBasis": 4995.00,&#10;            "taxRate": 0.16,&#10;            "c_brand": "Conair",&#10;            "c_employeeDiscount": 0.0,&#10;            "c_options": "[{\"optionId\":\"warranty\",\"sku\":null,\"description\":null,\"displayValue\":\"SELECCIONA GARANTÍA (OPCIONAL)\",\"selectedValueId\":\"0\",\"htmlName\":\"dwopt_17806233_warranty\",\"value\":0}]",&#10;            "c_originalPrice": 999.0,&#10;            "c_proratedPrice": 4995.0&#10;        },&#10;        {&#10;            "adjustedTax": 20688.97,&#10;            "basePrice": 29999.00,&#10;            "bonusProductLineItem": false,&#10;            "brand": "Liz Muebles",&#10;            "gift": false,&#10;            "grossPrice": 149995.00,&#10;            "itemId": "db7ef1d351ecf22590313463e5",&#10;            "itemText": "Sofá Cama Kiron",&#10;            "minOrderQuantity": 1,&#10;            "netPrice": 129306.03,&#10;            "position": 3,&#10;            "priceAfterItemDiscount": 149995.00,&#10;            "priceAfterOrderDiscount": 149995.00,&#10;            "productId": "36157883",&#10;            "productName": "Sofá Cama Kiron",&#10;            "quantity": 5,&#10;            "shipmentId": "me",&#10;            "stepQuantity": 1,&#10;            "tax": 20688.97,&#10;            "taxBasis": 149995.00,&#10;            "taxRate": 0.16,&#10;            "c_brand": "Liz Muebles",&#10;            "c_employeeDiscount": 0.0,&#10;            "c_originalPrice": 29999.0,&#10;            "c_proratedPrice": 149995.0&#10;        }&#10;    ],&#10;    "productSubTotal": 154990.00,&#10;    "productTotal": 154990.00,&#10;    "remoteHost": "189.217.101.63",&#10;    "shipments": [&#10;        {&#10;            "adjustedMerchandizeTotalTax": 21377.94,&#10;            "adjustedShippingTotalTax": 0.00,&#10;            "gift": false,&#10;            "merchandizeTotalTax": 21377.94,&#10;            "productSubTotal": 154990.00,&#10;            "productTotal": 154990.00,&#10;            "shipmentId": "me",&#10;            "shipmentNo": "00350516",&#10;            "shipmentTotal": 154990.00,&#10;            "shippingAddress": {&#10;                "address1": "Calle 42",&#10;                "city": "ciudad de mexico",&#10;                "countryCode": "MX",&#10;                "firstName": "Daniel",&#10;                "fullName": "Daniel Hernandez",&#10;                "lastName": "Hernandez",&#10;                "phone": "55 5435 4354",&#10;                "postalCode": "02230",&#10;                "stateCode": "santa bárbara",&#10;                "c_municipality": "azcapotzalco",&#10;                "c_outerNumber": "234"&#10;            },&#10;            "shippingMethod": {&#10;                "id": "STANDARD"&#10;            },&#10;            "shippingStatus": "not_shipped",&#10;            "shippingTotal": 0.00,&#10;            "shippingTotalTax": 0.00,&#10;            "taxTotal": 21377.94&#10;        }&#10;    ],&#10;    "shippingItems": [&#10;        {&#10;            "adjustedTax": 0.00,&#10;            "basePrice": 0.00,&#10;            "grossPrice": 0.00,&#10;            "itemId": "fa49e1fe6e3ca0fcf36f881576",&#10;            "itemText": "Shipping",&#10;            "netPrice": 0.00,&#10;            "priceAfterItemDiscount": 0.00,&#10;            "shipmentId": "me",&#10;            "tax": 0.00,&#10;            "taxBasis": 0.00,&#10;            "taxRate": 0.16&#10;        }&#10;    ],&#10;    "shippingStatus": "not_shipped",&#10;    "shippingTotal": 0.00,&#10;    "shippingTotalTax": 0.00,&#10;    "siteId": "palacio-MX",&#10;    "status": "new",&#10;    "taxation": "gross",&#10;    "taxTotal": 21377.94,&#10;    "c_customPaymentMethod": "DEBITOPROSAVISA",&#10;    "c_detailedPaymentResponse": "[{\"schemaId\":\"000000\",\"transactionDateTime\":\"2023-02-07T11:34:38.071Z\",\"externalTransactionCode\":\"216\",\"transactionID\":\"D1000080312\",\"originalTerminalId\":\"\",\"originalTransactionID\":\"0\",\"transactionInfoCount\":\"0\",\"terminal\":\"286\",\"approval\":\"301983 B\",\"responseCode\":\"005\",\"cardToken\":\"d48cbfc8285cad185d3a27f50db79f29\",\"responseDisplay\":\"TRANSACCION APROBADA\"}]",&#10;    "c_fluentOrderId": "107391",&#10;    "c_fulfillmentsStatus": "[{\"fulfillmentId\":\"222221\", \"status\":\"pending\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"22222\", \"status\":\"recived\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"2234522\", \"status\":\"recived\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"2000221\", \"status\":\"pending\", \"link\":\"https://thinkme-ph.mx/...\"}]",&#10;    "c_installment": 0.0,&#10;    "c_isStorefrontUser": true,&#10;    "c_orderPushedToFluent": true,&#10;    "c_orderPushedToFluentDate": "2023-02-07T17:34:42.000Z",&#10;    "c_orderPushedToFluentError": false,&#10;    "c_palacioFraudStatus": "ACCEPT",&#10;    "c_palacioStoreId": "8010",&#10;    "c_pdtaStatus": "NotApplicable",&#10;    "c_reimbursementPoints": 0.0,&#10;    "c_revolving": 0.0,&#10;    "c_rewardsPoints": 0.0,&#10;    "c_threatMetrixSessionID": "30095a9c91deb88eea920a1d9e1675791212867",&#10;    "c_ticketNumber": "801028602160702238"&#10;}]' />
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:spy doc:name="Spy" doc:id="87836d7d-b965-488f-a18f-5d21a80c4b32" processor="ee:transform">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="b0626d71-5828-41b5-ac5f-a1807c2c3403" actual="#[payload != null or payload != '']" expected="#[true]"/>
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="fca48af5-e100-4862-b35f-a59a22708b0a" processor="http:request">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="PATCH" attributeName="method" />
+          <munit-tools:with-attribute whereValue="PATCH /orderNo" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="1e42e929-34ae-4a9f-90c5-3df28fbe5331" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="SFCC_HTTP_Request_configuration" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+        <munit-tools:then-return >
+          <munit-tools:payload value='#[{&#10;  "c_fulfillmentStatus_ok": "[\n  {\n    \"fulfillmentId\": \"222221\",\n    \"status\": \"pending\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"22222\",\n    \"status\": \"recived\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"2234522\",\n    \"status\": \"recived\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"2000221\",\n    \"status\": \"pending\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"2\",\n    \"status\": \"DELIVERED\",\n    \"link\": \"https://palacio.hierro.mx\"\n  }\n]"&#10;}]' />
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="726d8d9a-41aa-426b-b3a2-adecaf5a26b8" processor="anypoint-mq:ack">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Ack" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="b2c7b2e1-89ce-49e1-941a-35e91ac67ceb" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Anypoint_MQ_Config_Update_Status_Order" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+      </munit-tools:mock-when>
+    </munit:behavior>
+    <munit:execution >
+      <munit:set-event doc:name="Set Event" doc:id="2ebe9cd6-29b2-4610-a039-baaee0c04a69" >
+        <munit:payload value='#[{&#10;    "orderNumber": "D1000080312",&#10;    "fulfillmentId": "222221",&#10;    "status": "DELIVERED",&#10;    "link": "https://palacio.hierro.mx"&#10;}]' />
+      </munit:set-event>
+      <flow-ref doc:name="Flow-ref to validate-and-get-flow" doc:id="01b3deb6-f6ae-4738-b5d3-5d6789b81ce1" name="validate-and-get-flow"/>
+    </munit:execution>
+    <munit:validation>
+      <munit-tools:verify-call doc:name="Verify call" doc:id="0c322d76-2c0b-491e-bbab-6b81dcea228e" processor="logger">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="INFO" attributeName="level" />
+          <munit-tools:with-attribute whereValue="Logger Info End" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="f083a622-3af9-4d37-a77d-8fb4a36d0104" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+      </munit-tools:verify-call>
+    </munit:validation>
+  </munit:test>
+  <munit:test name="sfcc-sys-api-push-order-status-test-suite-validate-and-get-flowTest-json-validation-error" doc:id="defb00db-94fd-468c-bf4b-168b877dd91f" description="Test" expectedErrorType="EXPRESSION">
+    <munit:behavior >
+      <munit-tools:spy doc:name="Spy" doc:id="17504af6-8522-4c02-af93-ac13adb243bd" processor="ee:transform">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message JSON_Input" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="ff60b6ac-626d-4ed1-a72a-5a73cd06f709" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="24abc59d-1edc-4de2-8649-070c5487a4f8" actual="#[vars.orderNumber != '' or vars.orderNumber != null]" expected="#[true]" />
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="f4af79bf-ab7a-4aba-aceb-29f127d94084" processor="anypoint-mq:nack">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Manual Not Acknowledgment" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="49e762ae-62a3-433c-8891-dc15009ad0fc" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Anypoint_MQ_Config_Update_Status_Order" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+      </munit-tools:mock-when>
+    </munit:behavior>
+    <munit:execution >
+      <munit:set-event doc:name="Set Event" doc:id="35e3c712-ccf6-4545-a95b-0d851f1f260c" >
+        <munit:payload value='#[{&#10;    "orderNumber": "D1000080312",&#10;    "fulfillmentId": "222221",&#10;    "status": "DELIVERED",&#10;    "link": "https://palacio.hierro.mx",&#10;}]' mediaType="application/json" />
+      </munit:set-event>
+      <flow-ref doc:name="Flow-ref to validate-and-get-flow" doc:id="7a13dfd9-bf3b-4d44-a0c1-b526b7efa7b2" name="mq_push_update_status" />
+    </munit:execution>
+    <munit:validation >
+      <munit-tools:assert-that doc:name="Assert that" doc:id="df91cc99-3f5d-4625-bd92-d2b5da71555b" expression="#[error.errorType]" is="#[MunitTools::equalTo('EXPRESSION')]" />
+    </munit:validation>
+  </munit:test>
+  <munit:test name="sfcc-sys-api-push-order-status-test-suite-validate-and-get-flowTest-get-error" doc:id="646a8223-ff43-488d-9c16-0c95fbe296b0" description="Test" expectedErrorType="HTTP:BAD_REQUEST">
+    <munit:behavior >
+      <munit-tools:spy doc:name="Spy" doc:id="09a976f1-a87e-46e2-9524-9438c6f5a55c" processor="ee:transform">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message JSON_Input" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="ff60b6ac-626d-4ed1-a72a-5a73cd06f709" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="dfea4b9b-ed87-4c49-8055-8534794243de" actual="#[vars.orderNumber != '' or vars.orderNumber != null]" expected="#[true]" />
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="f0835718-d26f-4d0c-a81c-7908157d8e51" processor="http:request" >
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="GET" attributeName="method" />
+          <munit-tools:with-attribute whereValue="GET /orderNo" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="66e30356-af9b-4623-a7dd-872c2c334532" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="SFCC_HTTP_Request_configuration" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+        <munit-tools:then-return >
+          <munit-tools:error typeId="HTTP:BAD_REQUEST" />
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:mock-when doc:name="Mock when1" doc:id="efee88be-b60b-4285-99e0-3f2ee217b084" processor="anypoint-mq:nack" >
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Manual Not Acknowledgment" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="49e762ae-62a3-433c-8891-dc15009ad0fc" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Anypoint_MQ_Config_Update_Status_Order" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+      </munit-tools:mock-when>
+    </munit:behavior>
+    <munit:execution >
+      <munit:set-event doc:name="Set Event" doc:id="8601f817-d1cc-4153-ac4c-d9b3ec3d480f" >
+        <munit:payload value='#[{&#10;    "orderNumber": "D1000080312",&#10;    "fulfillmentId": "222221",&#10;    "status": "DELIVERED",&#10;    "link": "https://palacio.hierro.mx"&#10;}]' />
+      </munit:set-event>
+      <flow-ref doc:name="Flow-ref to validate-and-get-flow" doc:id="2a2f4beb-ce75-42d1-ae5d-5c4ca73c26e7" name="validate-and-get-flow" />
+    </munit:execution>
+    <munit:validation >
+      <munit-tools:assert-that doc:name="Assert that" doc:id="3ad85fc3-1a1a-4fc3-bcf2-97923c59a32d" expression="#[error.errorType]" is="#[MunitTools::equalTo('HTTP:BAD_REQUEST')]" />
+    </munit:validation>
+  </munit:test>
+  <munit:test name="sfcc-sys-api-push-order-status-test-suite-validate-and-get-flowTest-fulfillments-validation-error" doc:id="43954eab-398a-452d-8e75-252f750b4da7" description="Test" expectedErrorType="EXPRESSION">
+    <munit:behavior >
+      <munit-tools:spy doc:name="Spy" doc:id="1938d923-0ff6-4e13-a94d-fd2c1ddc8ea6" processor="ee:transform">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message JSON_Input" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="ff60b6ac-626d-4ed1-a72a-5a73cd06f709" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="b1f37706-c7e0-48c1-9a8a-585bd75025f2" actual="#[vars.orderNumber != '' or vars.orderNumber != null]" expected="#[true]" />
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="f042fffa-a715-48fb-882b-f824d82e99cd" processor="http:request">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute whereValue="GET" attributeName="method" />
+          <munit-tools:with-attribute whereValue="GET /orderNo" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="66e30356-af9b-4623-a7dd-872c2c334532" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="SFCC_HTTP_Request_configuration" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+        <munit-tools:then-return >
+          <munit-tools:payload value='#[{&#10;    "adjustedMerchandizeTotalTax": 21377.94,&#10;    "adjustedShippingTotalTax": 0.00,&#10;    "billingAddress": {&#10;        "address1": "Calle 42",&#10;        "city": "ciudad de mexico",&#10;        "countryCode": "MX",&#10;        "firstName": "prueba",&#10;        "fullName": "prueba prueba",&#10;        "lastName": "prueba",&#10;        "phone": "55 5435 4354",&#10;        "postalCode": "02230",&#10;        "stateCode": "santa bárbara",&#10;        "c_municipality": "azcapotzalco",&#10;        "c_outerNumber": "234"&#10;    },&#10;    "confirmationStatus": "confirmed",&#10;    "createdBy": "storefront",&#10;    "creationDate": "2023-02-07T17:34:37.000Z",&#10;    "currency": "MXN",&#10;    "customerInfo": {&#10;        "customerId": "bcPwsFQcuyNjeo2NBSleMahoaR",&#10;        "customerName": "prueba prueba",&#10;        "email": "daniel.hernandez@globant.com",&#10;        "guest": true&#10;    },&#10;    "customerLocale": "es_MX",&#10;    "exportStatus": "exported",&#10;    "externalOrderNo": "301983 B",&#10;    "invoiceNo": "00288291",&#10;    "lastModified": "2023-03-06T19:55:06.531Z",&#10;    "merchandizeTotalTax": 21377.94,&#10;    "notes": [&#10;        {&#10;            "createdBy": "storefront",&#10;            "creationDate": "2023-02-07T17:34:41.000Z",&#10;            "subject": "CREDIT CARD TYPE",&#10;            "text": "DEBITOPROSAVISA"&#10;        },&#10;        {&#10;            "createdBy": "storefront",&#10;            "creationDate": "2023-02-07T17:34:42.000Z",&#10;            "subject": "email-response",&#10;            "text": "{\"requestId\":\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\",\"responses\":[{\"recipientSendId\":\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\",\"hasErrors\":false,\"messages\":[\"Queued\"]}]}"&#10;        }&#10;    ],&#10;    "orderNo": "D1000080312",&#10;    "orderTotal": 154990.00,&#10;    "paymentInstruments": [&#10;        {&#10;            "paymentCard": {&#10;                "cardType": "DEBITOPROSAVISA",&#10;                "creditCardExpired": false,&#10;                "creditCardToken": "d48cbfc8285cad185d3a27f50db79f29",&#10;                "expirationMonth": 12,&#10;                "expirationYear": 2025,&#10;                "holder": "prueba prueba",&#10;                "maskedNumber": "************6684",&#10;                "numberLastDigits": "6684"&#10;            },&#10;            "paymentInstrumentId": "da50d25bc936011d98b96ba968",&#10;            "paymentMethodId": "CREDIT_CARD",&#10;            "paymentTransaction": {&#10;                "amount": 154990.00,&#10;                "transactionId": "216"&#10;            },&#10;            "c_accertifyRecommendationCode": "ACCEPT",&#10;            "c_cardBinType": "14",&#10;            "c_palacioCardWithChip": false,&#10;            "c_paymentSchemas": "[{\"schemaId\":\"000000\",\"Amount\":\"154990.00\",\"Department\":\"10976\"}]",&#10;            "c_paymentStatus": "APPROVED",&#10;            "c_paymentType": "VISA",&#10;            "c_sequenceNumber": "2161"&#10;        }&#10;    ],&#10;    "paymentStatus": "paid",&#10;    "placeDate": "2023-02-07T17:34:42.046Z",&#10;    "productItems": [&#10;        {&#10;            "adjustedTax": 688.97,&#10;            "basePrice": 999.00,&#10;            "bonusProductLineItem": false,&#10;            "brand": "Conair",&#10;            "gift": false,&#10;            "grossPrice": 4995.00,&#10;            "itemId": "a69549874451049fc4128d9118",&#10;            "itemText": "Secadora de Cabello Infiniti Pro 1875 W",&#10;            "minOrderQuantity": 1,&#10;            "netPrice": 4306.03,&#10;            "optionItems": [&#10;                {&#10;                    "basePrice": 0.00,&#10;                    "gift": false,&#10;                    "grossPrice": 0.00,&#10;                    "itemText": "Warranty name: SELECCIONA GARANTÍA (OPCIONAL)",&#10;                    "netPrice": 0.00,&#10;                    "optionId": "warranty",&#10;                    "optionValueId": "0",&#10;                    "productId": "0",&#10;                    "tax": 0.00,&#10;                    "taxBasis": 0.00&#10;                }&#10;            ],&#10;            "position": 1,&#10;            "priceAfterItemDiscount": 4995.00,&#10;            "priceAfterOrderDiscount": 4995.00,&#10;            "productId": "17806233",&#10;            "productName": "Secadora de Cabello Infiniti Pro 1875 W",&#10;            "quantity": 5,&#10;            "shipmentId": "me",&#10;            "stepQuantity": 1,&#10;            "tax": 688.97,&#10;            "taxBasis": 4995.00,&#10;            "taxRate": 0.16,&#10;            "c_brand": "Conair",&#10;            "c_employeeDiscount": 0.0,&#10;            "c_options": "[{\"optionId\":\"warranty\",\"sku\":null,\"description\":null,\"displayValue\":\"SELECCIONA GARANTÍA (OPCIONAL)\",\"selectedValueId\":\"0\",\"htmlName\":\"dwopt_17806233_warranty\",\"value\":0}]",&#10;            "c_originalPrice": 999.0,&#10;            "c_proratedPrice": 4995.0&#10;        },&#10;        {&#10;            "adjustedTax": 20688.97,&#10;            "basePrice": 29999.00,&#10;            "bonusProductLineItem": false,&#10;            "brand": "Liz Muebles",&#10;            "gift": false,&#10;            "grossPrice": 149995.00,&#10;            "itemId": "db7ef1d351ecf22590313463e5",&#10;            "itemText": "Sofá Cama Kiron",&#10;            "minOrderQuantity": 1,&#10;            "netPrice": 129306.03,&#10;            "position": 3,&#10;            "priceAfterItemDiscount": 149995.00,&#10;            "priceAfterOrderDiscount": 149995.00,&#10;            "productId": "36157883",&#10;            "productName": "Sofá Cama Kiron",&#10;            "quantity": 5,&#10;            "shipmentId": "me",&#10;            "stepQuantity": 1,&#10;            "tax": 20688.97,&#10;            "taxBasis": 149995.00,&#10;            "taxRate": 0.16,&#10;            "c_brand": "Liz Muebles",&#10;            "c_employeeDiscount": 0.0,&#10;            "c_originalPrice": 29999.0,&#10;            "c_proratedPrice": 149995.0&#10;        }&#10;    ],&#10;    "productSubTotal": 154990.00,&#10;    "productTotal": 154990.00,&#10;    "remoteHost": "189.217.101.63",&#10;    "shipments": [&#10;        {&#10;            "adjustedMerchandizeTotalTax": 21377.94,&#10;            "adjustedShippingTotalTax": 0.00,&#10;            "gift": false,&#10;            "merchandizeTotalTax": 21377.94,&#10;            "productSubTotal": 154990.00,&#10;            "productTotal": 154990.00,&#10;            "shipmentId": "me",&#10;            "shipmentNo": "00350516",&#10;            "shipmentTotal": 154990.00,&#10;            "shippingAddress": {&#10;                "address1": "Calle 42",&#10;                "city": "ciudad de mexico",&#10;                "countryCode": "MX",&#10;                "firstName": "Daniel",&#10;                "fullName": "Daniel Hernandez",&#10;                "lastName": "Hernandez",&#10;                "phone": "55 5435 4354",&#10;                "postalCode": "02230",&#10;                "stateCode": "santa bárbara",&#10;                "c_municipality": "azcapotzalco",&#10;                "c_outerNumber": "234"&#10;            },&#10;            "shippingMethod": {&#10;                "id": "STANDARD"&#10;            },&#10;            "shippingStatus": "not_shipped",&#10;            "shippingTotal": 0.00,&#10;            "shippingTotalTax": 0.00,&#10;            "taxTotal": 21377.94&#10;        }&#10;    ],&#10;    "shippingItems": [&#10;        {&#10;            "adjustedTax": 0.00,&#10;            "basePrice": 0.00,&#10;            "grossPrice": 0.00,&#10;            "itemId": "fa49e1fe6e3ca0fcf36f881576",&#10;            "itemText": "Shipping",&#10;            "netPrice": 0.00,&#10;            "priceAfterItemDiscount": 0.00,&#10;            "shipmentId": "me",&#10;            "tax": 0.00,&#10;            "taxBasis": 0.00,&#10;            "taxRate": 0.16&#10;        }&#10;    ],&#10;    "shippingStatus": "not_shipped",&#10;    "shippingTotal": 0.00,&#10;    "shippingTotalTax": 0.00,&#10;    "siteId": "palacio-MX",&#10;    "status": "new",&#10;    "taxation": "gross",&#10;    "taxTotal": 21377.94,&#10;    "c_customPaymentMethod": "DEBITOPROSAVISA",&#10;    "c_detailedPaymentResponse": "[{\"schemaId\":\"000000\",\"transactionDateTime\":\"2023-02-07T11:34:38.071Z\",\"externalTransactionCode\":\"216\",\"transactionID\":\"D1000080312\",\"originalTerminalId\":\"\",\"originalTransactionID\":\"0\",\"transactionInfoCount\":\"0\",\"terminal\":\"286\",\"approval\":\"301983 B\",\"responseCode\":\"005\",\"cardToken\":\"d48cbfc8285cad185d3a27f50db79f29\",\"responseDisplay\":\"TRANSACCION APROBADA\"}]",&#10;    "c_fluentOrderId": "107391",&#10;    "c_fulfillmentsStatus": "[{\"fulfillmentId\"\"222221\", \"status\":\"pending\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"22222\", \"status\":\"recived\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"2234522\", \"status\":\"recived\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"2000221\", \"status\":\"pending\", \"link\":\"https://thinkme-ph.mx/...\"}]",&#10;    "c_installment": 0.0,&#10;    "c_isStorefrontUser": true,&#10;    "c_orderPushedToFluent": true,&#10;    "c_orderPushedToFluentDate": "2023-02-07T17:34:42.000Z",&#10;    "c_orderPushedToFluentError": false,&#10;    "c_palacioFraudStatus": "ACCEPT",&#10;    "c_palacioStoreId": "8010",&#10;    "c_pdtaStatus": "NotApplicable",&#10;    "c_reimbursementPoints": 0.0,&#10;    "c_revolving": 0.0,&#10;    "c_rewardsPoints": 0.0,&#10;    "c_threatMetrixSessionID": "30095a9c91deb88eea920a1d9e1675791212867",&#10;    "c_ticketNumber": "801028602160702238"&#10;}]' />
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:spy doc:name="Spy1" doc:id="717f312f-5186-4d62-85f4-460cc8a9a55a" processor="ee:transform" >
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="e2e65d72-5830-443b-ac5a-952631158d21" actual="#[payload != null or payload != '']" expected="#[true]" />
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="5d8087d8-ce03-4242-b007-0d3e54dbf2d4" processor="anypoint-mq:ack">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Ack" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="b2c7b2e1-89ce-49e1-941a-35e91ac67ceb" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Anypoint_MQ_Config_Update_Status_Order" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+      </munit-tools:mock-when>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="3ec3ad4b-8638-4922-a821-efab50de34a3" processor="anypoint-mq:nack">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Manual Not Acknowledgment" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="49e762ae-62a3-433c-8891-dc15009ad0fc" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Anypoint_MQ_Config_Update_Status_Order" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+        <munit-tools:then-return >
+          <munit-tools:error typeId="EXPRESSION" />
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+    </munit:behavior>
+    <munit:execution >
+      <munit:set-event doc:name="Set Event" doc:id="2ff1d32d-0ed4-4852-bfb7-919df9e7e324" >
+        <munit:payload value='#[{&#10;    "orderNumber": "D1000080312",&#10;    "fulfillmentId": "222221",&#10;    "status": "DELIVERED",&#10;    "link": "https://palacio.hierro.mx"&#10;}]' />
+      </munit:set-event>
+      <flow-ref doc:name="Flow-ref to validate-and-get-flow" doc:id="7c368eb2-e7ae-4203-9bd1-b40b3f8b70ef" name="validate-and-get-flow" />
+    </munit:execution>
+    <munit:validation >
+      <munit-tools:assert-that doc:name="Assert that" doc:id="685ea5ec-0b53-4713-9a56-4ecc694eaeb3" expression="#[error.errorType]" is="#[MunitTools::equalTo('EXPRESSION')]" />
+    </munit:validation>
+  </munit:test>
+  <munit:test name="sfcc-sys-api-push-order-status-test-suite-validate-and-get-flowTest-patch-error" doc:id="40a7a6f9-7424-44aa-927d-18ea7e5c0de2" description="Test" expectedErrorType="HTTP:NOT_FOUND">
+    <munit:behavior >
+      <munit-tools:spy doc:name="Spy" doc:id="e1717939-3d82-4d19-a853-78a7e4787430" processor="ee:transform">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message JSON_Input" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="ff60b6ac-626d-4ed1-a72a-5a73cd06f709" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="c2fb3b9a-c45b-43ea-a6d8-c800cae09369" actual="#[vars.orderNumber != '' or vars.orderNumber != null]" expected="#[true]" />
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when3" doc:id="167833b5-cd80-457c-878b-f09764f00059" processor="http:request">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute whereValue="GET" attributeName="method" />
+          <munit-tools:with-attribute whereValue="GET /orderNo" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="66e30356-af9b-4623-a7dd-872c2c334532" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="SFCC_HTTP_Request_configuration" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+        <munit-tools:then-return >
+          <munit-tools:payload value='#[{&#10;    "adjustedMerchandizeTotalTax": 21377.94,&#10;    "adjustedShippingTotalTax": 0.00,&#10;    "billingAddress": {&#10;        "address1": "Calle 42",&#10;        "city": "ciudad de mexico",&#10;        "countryCode": "MX",&#10;        "firstName": "prueba",&#10;        "fullName": "prueba prueba",&#10;        "lastName": "prueba",&#10;        "phone": "55 5435 4354",&#10;        "postalCode": "02230",&#10;        "stateCode": "santa bárbara",&#10;        "c_municipality": "azcapotzalco",&#10;        "c_outerNumber": "234"&#10;    },&#10;    "confirmationStatus": "confirmed",&#10;    "createdBy": "storefront",&#10;    "creationDate": "2023-02-07T17:34:37.000Z",&#10;    "currency": "MXN",&#10;    "customerInfo": {&#10;        "customerId": "bcPwsFQcuyNjeo2NBSleMahoaR",&#10;        "customerName": "prueba prueba",&#10;        "email": "daniel.hernandez@globant.com",&#10;        "guest": true&#10;    },&#10;    "customerLocale": "es_MX",&#10;    "exportStatus": "exported",&#10;    "externalOrderNo": "301983 B",&#10;    "invoiceNo": "00288291",&#10;    "lastModified": "2023-03-06T19:55:06.531Z",&#10;    "merchandizeTotalTax": 21377.94,&#10;    "notes": [&#10;        {&#10;            "createdBy": "storefront",&#10;            "creationDate": "2023-02-07T17:34:41.000Z",&#10;            "subject": "CREDIT CARD TYPE",&#10;            "text": "DEBITOPROSAVISA"&#10;        },&#10;        {&#10;            "createdBy": "storefront",&#10;            "creationDate": "2023-02-07T17:34:42.000Z",&#10;            "subject": "email-response",&#10;            "text": "{\"requestId\":\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\",\"responses\":[{\"recipientSendId\":\"3d52d943-ca54-4487-ba5a-3ff497daaaf0\",\"hasErrors\":false,\"messages\":[\"Queued\"]}]}"&#10;        }&#10;    ],&#10;    "orderNo": "D1000080312",&#10;    "orderTotal": 154990.00,&#10;    "paymentInstruments": [&#10;        {&#10;            "paymentCard": {&#10;                "cardType": "DEBITOPROSAVISA",&#10;                "creditCardExpired": false,&#10;                "creditCardToken": "d48cbfc8285cad185d3a27f50db79f29",&#10;                "expirationMonth": 12,&#10;                "expirationYear": 2025,&#10;                "holder": "prueba prueba",&#10;                "maskedNumber": "************6684",&#10;                "numberLastDigits": "6684"&#10;            },&#10;            "paymentInstrumentId": "da50d25bc936011d98b96ba968",&#10;            "paymentMethodId": "CREDIT_CARD",&#10;            "paymentTransaction": {&#10;                "amount": 154990.00,&#10;                "transactionId": "216"&#10;            },&#10;            "c_accertifyRecommendationCode": "ACCEPT",&#10;            "c_cardBinType": "14",&#10;            "c_palacioCardWithChip": false,&#10;            "c_paymentSchemas": "[{\"schemaId\":\"000000\",\"Amount\":\"154990.00\",\"Department\":\"10976\"}]",&#10;            "c_paymentStatus": "APPROVED",&#10;            "c_paymentType": "VISA",&#10;            "c_sequenceNumber": "2161"&#10;        }&#10;    ],&#10;    "paymentStatus": "paid",&#10;    "placeDate": "2023-02-07T17:34:42.046Z",&#10;    "productItems": [&#10;        {&#10;            "adjustedTax": 688.97,&#10;            "basePrice": 999.00,&#10;            "bonusProductLineItem": false,&#10;            "brand": "Conair",&#10;            "gift": false,&#10;            "grossPrice": 4995.00,&#10;            "itemId": "a69549874451049fc4128d9118",&#10;            "itemText": "Secadora de Cabello Infiniti Pro 1875 W",&#10;            "minOrderQuantity": 1,&#10;            "netPrice": 4306.03,&#10;            "optionItems": [&#10;                {&#10;                    "basePrice": 0.00,&#10;                    "gift": false,&#10;                    "grossPrice": 0.00,&#10;                    "itemText": "Warranty name: SELECCIONA GARANTÍA (OPCIONAL)",&#10;                    "netPrice": 0.00,&#10;                    "optionId": "warranty",&#10;                    "optionValueId": "0",&#10;                    "productId": "0",&#10;                    "tax": 0.00,&#10;                    "taxBasis": 0.00&#10;                }&#10;            ],&#10;            "position": 1,&#10;            "priceAfterItemDiscount": 4995.00,&#10;            "priceAfterOrderDiscount": 4995.00,&#10;            "productId": "17806233",&#10;            "productName": "Secadora de Cabello Infiniti Pro 1875 W",&#10;            "quantity": 5,&#10;            "shipmentId": "me",&#10;            "stepQuantity": 1,&#10;            "tax": 688.97,&#10;            "taxBasis": 4995.00,&#10;            "taxRate": 0.16,&#10;            "c_brand": "Conair",&#10;            "c_employeeDiscount": 0.0,&#10;            "c_options": "[{\"optionId\":\"warranty\",\"sku\":null,\"description\":null,\"displayValue\":\"SELECCIONA GARANTÍA (OPCIONAL)\",\"selectedValueId\":\"0\",\"htmlName\":\"dwopt_17806233_warranty\",\"value\":0}]",&#10;            "c_originalPrice": 999.0,&#10;            "c_proratedPrice": 4995.0&#10;        },&#10;        {&#10;            "adjustedTax": 20688.97,&#10;            "basePrice": 29999.00,&#10;            "bonusProductLineItem": false,&#10;            "brand": "Liz Muebles",&#10;            "gift": false,&#10;            "grossPrice": 149995.00,&#10;            "itemId": "db7ef1d351ecf22590313463e5",&#10;            "itemText": "Sofá Cama Kiron",&#10;            "minOrderQuantity": 1,&#10;            "netPrice": 129306.03,&#10;            "position": 3,&#10;            "priceAfterItemDiscount": 149995.00,&#10;            "priceAfterOrderDiscount": 149995.00,&#10;            "productId": "36157883",&#10;            "productName": "Sofá Cama Kiron",&#10;            "quantity": 5,&#10;            "shipmentId": "me",&#10;            "stepQuantity": 1,&#10;            "tax": 20688.97,&#10;            "taxBasis": 149995.00,&#10;            "taxRate": 0.16,&#10;            "c_brand": "Liz Muebles",&#10;            "c_employeeDiscount": 0.0,&#10;            "c_originalPrice": 29999.0,&#10;            "c_proratedPrice": 149995.0&#10;        }&#10;    ],&#10;    "productSubTotal": 154990.00,&#10;    "productTotal": 154990.00,&#10;    "remoteHost": "189.217.101.63",&#10;    "shipments": [&#10;        {&#10;            "adjustedMerchandizeTotalTax": 21377.94,&#10;            "adjustedShippingTotalTax": 0.00,&#10;            "gift": false,&#10;            "merchandizeTotalTax": 21377.94,&#10;            "productSubTotal": 154990.00,&#10;            "productTotal": 154990.00,&#10;            "shipmentId": "me",&#10;            "shipmentNo": "00350516",&#10;            "shipmentTotal": 154990.00,&#10;            "shippingAddress": {&#10;                "address1": "Calle 42",&#10;                "city": "ciudad de mexico",&#10;                "countryCode": "MX",&#10;                "firstName": "Daniel",&#10;                "fullName": "Daniel Hernandez",&#10;                "lastName": "Hernandez",&#10;                "phone": "55 5435 4354",&#10;                "postalCode": "02230",&#10;                "stateCode": "santa bárbara",&#10;                "c_municipality": "azcapotzalco",&#10;                "c_outerNumber": "234"&#10;            },&#10;            "shippingMethod": {&#10;                "id": "STANDARD"&#10;            },&#10;            "shippingStatus": "not_shipped",&#10;            "shippingTotal": 0.00,&#10;            "shippingTotalTax": 0.00,&#10;            "taxTotal": 21377.94&#10;        }&#10;    ],&#10;    "shippingItems": [&#10;        {&#10;            "adjustedTax": 0.00,&#10;            "basePrice": 0.00,&#10;            "grossPrice": 0.00,&#10;            "itemId": "fa49e1fe6e3ca0fcf36f881576",&#10;            "itemText": "Shipping",&#10;            "netPrice": 0.00,&#10;            "priceAfterItemDiscount": 0.00,&#10;            "shipmentId": "me",&#10;            "tax": 0.00,&#10;            "taxBasis": 0.00,&#10;            "taxRate": 0.16&#10;        }&#10;    ],&#10;    "shippingStatus": "not_shipped",&#10;    "shippingTotal": 0.00,&#10;    "shippingTotalTax": 0.00,&#10;    "siteId": "palacio-MX",&#10;    "status": "new",&#10;    "taxation": "gross",&#10;    "taxTotal": 21377.94,&#10;    "c_customPaymentMethod": "DEBITOPROSAVISA",&#10;    "c_detailedPaymentResponse": "[{\"schemaId\":\"000000\",\"transactionDateTime\":\"2023-02-07T11:34:38.071Z\",\"externalTransactionCode\":\"216\",\"transactionID\":\"D1000080312\",\"originalTerminalId\":\"\",\"originalTransactionID\":\"0\",\"transactionInfoCount\":\"0\",\"terminal\":\"286\",\"approval\":\"301983 B\",\"responseCode\":\"005\",\"cardToken\":\"d48cbfc8285cad185d3a27f50db79f29\",\"responseDisplay\":\"TRANSACCION APROBADA\"}]",&#10;    "c_fluentOrderId": "107391",&#10;    "c_fulfillmentsStatus": "[{\"fulfillmentId\":\"222221\", \"status\":\"pending\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"22222\", \"status\":\"recived\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"2234522\", \"status\":\"recived\", \"link\":\"https://thinkme-ph.mx/...\"},{\"fulfillmentId\":\"2000221\", \"status\":\"pending\", \"link\":\"https://thinkme-ph.mx/...\"}]",&#10;    "c_installment": 0.0,&#10;    "c_isStorefrontUser": true,&#10;    "c_orderPushedToFluent": true,&#10;    "c_orderPushedToFluentDate": "2023-02-07T17:34:42.000Z",&#10;    "c_orderPushedToFluentError": false,&#10;    "c_palacioFraudStatus": "ACCEPT",&#10;    "c_palacioStoreId": "8010",&#10;    "c_pdtaStatus": "NotApplicable",&#10;    "c_reimbursementPoints": 0.0,&#10;    "c_revolving": 0.0,&#10;    "c_rewardsPoints": 0.0,&#10;    "c_threatMetrixSessionID": "30095a9c91deb88eea920a1d9e1675791212867",&#10;    "c_ticketNumber": "801028602160702238"&#10;}]' />
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:spy doc:name="Spy1" doc:id="88bb9963-37cc-4c8a-b033-1d22f32a7ae9" processor="ee:transform" >
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Transform Message Update Status" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="a7d41435-758b-4491-b98a-c48de4c9c9c2" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+        <munit-tools:after-call >
+          <munit-tools:assert-equals doc:name="Assert equals" doc:id="64fb88a5-6e7b-4004-b76b-5b44ac654f17" actual="#[payload != null or payload != '']" expected="#[true]" />
+        </munit-tools:after-call>
+      </munit-tools:spy>
+      <munit-tools:mock-when doc:name="Mock when1" doc:id="7414d261-3b57-454f-b273-0e6b0d007a28" processor="http:request" >
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="PATCH" attributeName="method" />
+          <munit-tools:with-attribute whereValue="PATCH /orderNo" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="1e42e929-34ae-4a9f-90c5-3df28fbe5331" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="SFCC_HTTP_Request_configuration" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+        <munit-tools:then-return >
+          <munit-tools:payload value='#[{&#10;  "c_fulfillmentStatus_ok": "[\n  {\n    \"fulfillmentId\": \"222221\",\n    \"status\": \"pending\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"22222\",\n    \"status\": \"recived\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"2234522\",\n    \"status\": \"recived\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"2000221\",\n    \"status\": \"pending\",\n    \"link\": \"https://thinkme-ph.mx/...\"\n  },\n  {\n    \"fulfillmentId\": \"2\",\n    \"status\": \"DELIVERED\",\n    \"link\": \"https://palacio.hierro.mx\"\n  }\n]"&#10;}]' />
+          <munit-tools:error typeId="HTTP:NOT_FOUND" />
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:mock-when doc:name="Mock when2" doc:id="8171c0d1-f06a-4932-b44e-7b21c5f92f01" processor="alert-management-api:create-alert" >
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Create alert" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="25564424-0773-4045-86ef-858ae650c17b" attributeName="doc:id" />
+        </munit-tools:with-attributes>
+      </munit-tools:mock-when>
+      <munit-tools:mock-when doc:name="Mock when" doc:id="a43d011a-f0dc-4935-a6c9-9d6e84f24edb" processor="anypoint-mq:nack">
+        <munit-tools:with-attributes >
+          <munit-tools:with-attribute whereValue="Manual Not Acknowledgment" attributeName="doc:name" />
+          <munit-tools:with-attribute whereValue="49e762ae-62a3-433c-8891-dc15009ad0fc" attributeName="doc:id" />
+          <munit-tools:with-attribute whereValue="Anypoint_MQ_Config_Update_Status_Order" attributeName="config-ref" />
+        </munit-tools:with-attributes>
+      </munit-tools:mock-when>
+    </munit:behavior>
+    <munit:execution >
+      <munit:set-event doc:name="Set Event" doc:id="3694b57a-4a66-4478-ab9f-00ea0b3fa8cf" >
+        <munit:payload value='#[{&#10;    "orderNumber": "D1000080312",&#10;    "fulfillmentId": "222221",&#10;    "status": "DELIVERED",&#10;    "link": "https://palacio.hierro.mx"&#10;}]' />
+      </munit:set-event>
+      <flow-ref doc:name="Flow-ref to validate-and-get-flow" doc:id="b2e67a1a-59eb-4493-8fc5-3f657a679122" name="validate-and-get-flow" />
+    </munit:execution>
+    <munit:validation>
+      <munit-tools:assert-that doc:name="Assert that" doc:id="d3231412-662b-4d8c-b01f-3f15106e1c33" expression="#[error.errorType]" is="#[MunitTools::equalTo('HTTP:NOT_FOUND')]"/>
+    </munit:validation>
+  </munit:test>
+
+</mule>

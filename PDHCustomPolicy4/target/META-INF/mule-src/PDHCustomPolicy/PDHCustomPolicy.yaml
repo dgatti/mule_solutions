@@ -1,0 +1,55 @@
+id: PDHCustomPolicy
+name: PDHCustomPolicy
+description: PDHCustomPolicy
+category: Custom
+type: custom
+resourceLevelSupported: true
+encryptionSupported: false
+standalone: true
+requiredCharacteristics: []
+providedCharacteristics: []
+configuration:
+  - propertyName: tokenHeader
+    name: Token Header Name
+    description: Name of the header to validate the token
+    type: string
+    optional: true
+    defaultValue: 'token'
+  - propertyName: evaluateUsername
+    name: Evaluate the username
+    description: If the SFCC username from token should match with the request one
+    type: boolean
+    optional: false
+    defaultValue: true
+  - propertyName: usernameHeader
+    name: Username Header Name
+    description: Name of the header to validate the username
+    type: string
+    optional: true
+    defaultValue: 'username'  
+    dependsOnKey: evaluateUsername
+    dependsOnValue: true
+  - propertyName: shortCode
+    name: SFCC Short Code
+    description: Code required to connect with SFCC
+    type: string
+    optional: false
+    defaultValue: ''
+  - propertyName: organizationId
+    name: SFCC Organization Id
+    description: Id required to connect with SFCC
+    type: string
+    optional: false
+    defaultValue: ''
+  - propertyName: clientId
+    name: SFCC Client Id
+    description: Client Id to authorize calls to SFCC
+    type: string
+    optional: false
+    defaultValue: ''
+  - propertyName: clientSecret
+    name: SFCC Client Secret
+    description: Client Secret to authorize calls to SFCC
+    type: string
+    optional: false
+    defaultValue: ''
