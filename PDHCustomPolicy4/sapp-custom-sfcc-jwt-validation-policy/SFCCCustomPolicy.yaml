@@ -1,0 +1,45 @@
+id: PDHCustomPolicy
+name: SFCC Token Validation
+description: Validate that access token passed as header is valid and active in SFCC
+category: Custom
+type: custom
+resourceLevelSupported: true
+encryptionSupported: false
+standalone: true
+requiredCharacteristics: []
+providedCharacteristics: []
+configuration:
+  - propertyName: tokenHeader
+    name: Token Header Name
+    description: Name of the header to validate the token
+    type: string
+    optional: true
+    defaultValue: 'token'
+  - propertyName: shortCode
+    name: SFCC Short Code
+    description: Code required to connect with SFCC
+    type: string
+    optional: false
+    defaultValue: ''
+    sensitive: true
+  - propertyName: organizationId
+    name: SFCC Organization Id
+    description: Id required to connect with SFCC
+    type: string
+    optional: false
+    defaultValue: ''
+    sensitive: true
+  - propertyName: clientId
+    name: SFCC Client Id
+    description: Client Id to authorize calls to SFCC
+    type: string
+    optional: false
+    defaultValue: ''
+    sensitive: true
+  - propertyName: clientSecret
+    name: SFCC Client Secret
+    description: Client Secret to authorize calls to SFCC
+    type: string
+    optional: false
+    defaultValue: ''
+    sensitive: true
