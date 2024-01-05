@@ -1,0 +1,754 @@
+#%RAML 1.0
+title: Maximus VES Salesforce Core System API
+description: System API responsible for encapsulating Salesforce REST Api
+version: v1
+mediaType: 
+  - application/xml
+protocols:
+  - HTTPS
+
+traits:
+  client-id-required: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/common/client-id-trait.raml
+  200-response: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/json/200-trait.raml
+  500-response:  !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/json/500-trait.raml
+  404-response:  !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/json/404-trait.raml
+
+/ves-esr:
+  patch:
+    is:
+      - client-id-required
+      - 500-response
+      - 404-response
+    body:
+      application/json:
+        description: VES_ESR json record
+        type: VES_ESR
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully updated
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/va-esr:
+  is:
+    - client-id-required
+    - 500-response
+    - 404-response
+  /{esr_id}:
+    get:
+      description: Get VA_ESR record by ESR Id
+      displayName: Get VA_ESR record by ESR Id
+      responses:
+        200:
+          body:
+            application/json:
+              description: Success
+              type: !include ./dataType/VAESR-dataType.raml
+
+/ves-dbq-form:
+  is:
+    - client-id-required
+    - 500-response
+  patch:
+    description: Update VES_DBQ_Form__c record
+    body:
+      application/json:
+        description: VES_DBQ_Form__c payload
+        type: VES_DBQ_Form
+    responses:
+      200:
+        body:
+          application/json:
+            description: VES_DBQ_Form__c updated record
+            type: VES_DBQ_Form
+
+/ves-dbq-contention:
+  is:
+    - client-id-required
+    - 500-response
+  get:
+    description: Query VES_Contentions__c records ready for RAP
+    displayName: Get VES_Contentions__c records    
+    responses:
+      200:
+        body:
+          application/json:            
+            type: VES_DBQ_Contention[]
+  patch:
+    description: Update VES_Contentions__c records
+    body:
+      application/json:
+        type: VES_DBQ_Contention[]
+    responses:
+      201:
+        body:
+          application/json:
+            type: VES_DBQ_Contention[]
+
+/ves-doc-references-contention:
+  is:
+    - client-id-required
+    - 500-response
+  get:
+    description: Query OutboundStaging__c by Contention Id
+    displayName: Get OutboundStaging__c records    
+    queryParameters:
+      contentionId:
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:            
+            type: VES_DBQ_Doc_Reference[]
+
+/log-entry:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    body:
+      application/json:
+        description: LogEntry__c JSon Object representation
+        type: !include ./dataType/LogEntry-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/log:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    body:
+      application/json:
+        description: Log__c JSon Object representation
+        type: !include ./dataType/Log-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/content-document-link:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new ContentDocumentLink record
+    body:
+      application/json:
+        type: ContentDocumentLinkNew
+    responses:
+      201:
+        body:
+          application/json:
+             description: Successfully created
+             type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+  get:
+    description: Query all Content Document Link object by linked entity Id
+    queryParameters:
+      linkedEntityId:
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            description: Array of Content Document Link Json object
+            type: ContentDocumentLinkType[]
+
+/schema-master:
+  is:
+    - client-id-required
+    - 500-response
+  get:
+    description: Query all Schema master object by version number
+    queryParameters:
+      versionNumber:
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            description: Array of Schema Master Json object
+            type: SchemaMasterType[]
+
+/content-version:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new Content Version object
+    body:
+      application/json:
+        type: ContentVersioNew
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+  get:
+    description: Query all Content Version object by param
+    queryParameters:
+      contentBodyId:
+        type: string
+        required: false
+      title:
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            description: Array of Content Version Json object
+            type: ContentVersionType[]
+  /{id}:
+    is: [404-response]
+    get:
+      description: Query Content Version object by Id
+      responses:
+        200:
+          body:
+            application/json:
+              description: Content Version Json object
+              type: ContentVersionType
+
+/va-contentions:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new VA_Contentions__c record
+    displayName: Create a new VA_Contentions__c record
+    body:
+      application/json:
+        description: VA_Contentions__c json record
+        type: !include ./dataType/VAContentions-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/va-dbq:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new VA_DBQ__c record
+    displayName: Create a new VA_DBQ__c record
+    body:
+      application/json:
+        description: VA_DBQ__c json record
+        type: !include ./dataType/VADBQ-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/va-period-of-service:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new VA_Period_of_Service__c record
+    displayName: Create a new VA_Period_of_Service__c record
+    body:
+      application/json:
+        description: VA_Period_of_Service json record
+        type: !include ./dataType/VAPeriodOfService-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/va-inbound-esr:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new VA_ESR__c record
+    displayName: Create a new VA_ESR__c record
+    body:
+      application/json:
+        description: VA_ESR json record
+        type: !include ./dataType/VAESR-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/va-medical-opinion:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new Medical_Opinion__c record
+    displayName: Create a new Medical_Opinion__c record
+    body:
+      application/json:
+        description: Medical_Opinion__c json record
+        type: !include ./dataType/VAMedicalOpinion-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+/pnm-sync-data:
+  is:
+    - client-id-required
+  post:
+    description: This appi will upsert the data from pnm to salesforce core
+    queryParameters:
+      composite:
+        type: boolean
+        required: false
+    body:
+      application/json:
+        type: !include dataType/Sync-dataType.raml
+    responses:
+      200:
+        description: Success response on asset upserted
+        body:
+          application/json:
+            example: !include examples/PnmSyncDataResp.raml
+      500:
+        description: Error processing request
+        body:
+          application/json:
+            example: !include examples/PnmSyncDataErrorResp.raml
+
+/s3-document:
+  is:
+    - client-id-required
+  post:
+    description: Resource responsible to persist S3 Document data into SF Core
+    body:
+      application/json:
+        type: !include ./dataType/S3Document-dataType.raml
+    responses:
+      201:
+        description: Success response on document inserted
+        body:
+          application/json:
+            example: !include ./examples/S3DocumentSuccessResponseExample.raml
+      500:
+        description: Internal Server Error
+        body:        
+          application/json:
+            example: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/examples/fault/500-example.raml
+  get:
+    description: Resource responsible to recovery S3 Document data from SF Core
+    responses:
+      200:
+        body:
+          application/json:
+            example:  !include examples/GetDocumentIdResp.raml
+      500:
+        description: Internal Server Error
+        body:
+          application/json: 
+            example: !include examples/GetDocumentIdRespError.raml
+  /dbq-form:
+    get:
+      description: Query S3_Document by a ready for report flag
+      queryParameters:
+        reportReady:
+          required: false
+          type: boolean
+          displayName: Flag that indicates what records are ready to process
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include examples/GetDocumentDbqFormResp.raml
+        500:
+          description: Internal Server Error
+          body:
+            application/json: 
+              example: !include examples/GetDocumentIdRespError.raml
+  put:
+      description: Resource responsible to update S3 Document data into SF Core
+      body:
+        application/json:
+          type: !include ./dataType/S3DocumentUpdate-dataType.raml
+      responses:
+        201:
+          description: Success response on document inserted
+          body:
+            application/json:
+               example: !include /examples/S3DocumentSuccessUpdateResponseExample.raml
+        500:
+          description: Internal Server Error
+          body:        
+            application/json:
+                example: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/examples/fault/500-example.raml
+     
+
+/content-version-s3:
+    is:
+    - client-id-required
+    get:
+      description: This resource is responsible to recovery document information from contentVersion to S3
+      queryParameters:
+        contentVersionId:
+          type: string
+          required: false
+        contentDocumentId:
+          type: string
+          required: false
+      responses:
+        200:
+          description: Success Response
+          headers:
+            Content-Disposition:
+          body:
+            application/octet-stream:
+        500:
+          description: Internal Server Error
+          body:
+            application/json: 
+              example: !include examples/GetDocumentIdRespError.raml
+
+/content-version-by-s3Id:
+    is:
+    - client-id-required
+    get:
+      description: This resource is responsible to recovery document from contentVersion by S3 record Id (LinkedEntityId)
+      queryParameters:
+        linkedEntityId:
+          type: string
+          required: false
+      responses:
+        200:
+          description: Success Response
+          headers:
+            Content-Disposition:
+          body:
+            application/octet-stream:
+        500:
+          description: Internal Server Error
+          body:
+            application/json: 
+              example: !include examples/GetDocumentIdRespError.raml
+
+/accounts-payable:
+    is:
+      - client-id-required
+      - 500-response
+    get:
+      description: This resource recovery, throught a query, payment informations from Core Payment Object for accounts payables
+      queryParameters: 
+        status:
+          type: string
+          required: true
+          enum: ['ACH/Wire Paid','ACH/Wire Not Paid','Check Printed','Check Cashed','Submitted','Approved','Rejected','Sent for Payment','Canceled','Rejected','Under Review']
+          example: 'Approved'
+      responses:
+        200:
+          body:
+            application/json:
+              description: Array of payment information
+              example: !include examples/AccountPayableExample.raml
+
+    put:
+      description: Resource responsible to update status sfCore payable
+      queryParameters:  
+        nameId:
+          type: string
+          required: true
+      body:
+        application/json:
+          type: !include ./dataType/UpdateStatusAP-dataType.raml
+          example: !include /examples/UpdateStatusAPexample.raml
+      responses:
+        201:
+          description: Success response on document inserted
+          body:
+            application/json:
+               example: !include examples/PutUpdateAP-ARRespOk.raml
+        
+/accounts-receivables:
+    is:
+      - client-id-required
+      - 500-response
+    get:
+      description: This resource recovery, throught a query, payment informations from Core Payment Object for accounts receibables
+      queryParameters:  
+        status:
+            type: string
+            required: true
+            enum: ['In Progress','Under Review','Approved','Received by Fusion','Paid','Rejected']
+            example: 'Approved'
+      responses:
+        200:
+          body:
+            application/json:
+              description: Array of payment information
+              example: !include examples/AccountReceivablesExample.raml
+
+    put:
+      description: Resource responsible to update status sfCore payable
+      queryParameters:  
+        invoiceId:
+          type: string
+          required: true
+        lineNumber:
+          type: string
+          required: true
+
+      body:
+        application/json:
+          type: !include ./dataType/UpdateStatusAR-dataType.raml
+          example: !include /examples/UpdateStatusARexample.raml
+      responses:
+        201:
+          description: Success response on document inserted
+          body:
+            application/json:
+               example: !include examples/PutUpdateAP-ARRespOk.raml
+        
+/cenl-notification:
+    is:
+    - client-id-required
+    get:
+      description: This resource is responsible to get the records from Notification and S3Document object that are ready.
+      responses:
+        200:
+          description: Success Response
+          body:
+            application/json:
+              type: CenlNotificationType
+              example: !include ./examples/CenlNotificationGetExample.raml
+        500:
+          description: Internal Server Error
+          body:
+            application/json:
+              example: !include ./examples/CenlNotificationErrorResp.raml
+    put:
+      body:
+        application/json:
+          type: CenlNotificationUpdateType
+          example: !include ./examples/CenlNotificationUpdateExample.raml
+      description: This resource is responsible to update the Notification__c records flag (ProcessedbyMule__c) to true for succesfully processed records.
+      responses:
+        200:
+          description: Success Response
+          body:
+            application/json:
+              example: !include ./examples/CenlNotificationUpdateRespExample.raml
+        500:
+          description: Internal Server Error
+          body:
+            application/json:
+              example: !include ./examples/CenlNotificationErrorResp.raml
+    /service-appointment:
+      is:
+        - 500-response
+        - 404-response
+      get:
+        queryParameters:
+          caseNumber:
+            description: CaseNumber of Case object
+            required: true
+            type: string
+            example: "V0000000000"
+        responses:
+          200:
+            body:
+              application/json:
+                type: Notification[]
+      patch:
+        is:
+          - 200-response
+        description: Resource responsible to update the Notification__c custom object
+        body:
+          application/json:
+            type: Notification
+
+/case-metadata:
+  is:
+    - client-id-required
+    - 500-response
+    - 404-response
+  get:
+    description: Resource responsible to recovery Case metadata from SF Core Case Object
+    responses:
+      200:
+        body:
+          application/json:
+            type: Case[]
+            example:  !include examples/GetMetadataOkResp.raml
+  /{caseNumber}:
+      is:
+        - client-id-required
+        - 404-response
+        - 500-response
+      get:
+        description: Resource responsible to recovery Case id metadata from SF Core Case Object
+        responses:
+          200:
+            body:
+              application/json:
+                #example:  !include examples/GetMetadataOkResp.raml
+          400:
+            description: Bad Request
+            body:
+              application/json:
+                example: !include examples/ReponsesError.raml
+          401:
+            description: Unauthorized
+            body:
+              application/json:
+                example: !include examples/ReponsesError.raml
+  /{esrId}:
+      is:
+        - client-id-required
+        - 404-response
+        - 500-response
+      get:
+        description: Resource responsible to recovery Case id metadata from SF Core Case Object
+        responses:
+          200:
+            body:
+              application/json:
+                #example:  !include examples/GetMetadataOkResp.raml
+          400:
+            description: Bad Request
+            body:
+              application/json:
+                example: !include examples/ReponsesError.raml
+  patch:
+      description: Resource responsible to update Case Notify data into SF Core Case Object
+      body:
+        application/json:
+          type: !include ./dataType/CaseNotificationUpdate-dataType.raml
+          example: !include examples/PutNotificationUpdate.raml
+      responses:
+        201:
+          description: Success response on document inserted
+          body:
+            application/json:
+               example: !include examples/PutNotificationUpdateRespOk.raml
+        400:
+          description: Bad Request
+          body:
+            application/json:
+              example: !include examples/ReponsesError.raml
+
+/account:
+  is:
+    - client-id-required
+    - 500-response
+    - 404-response
+  get:
+    description: Query a list of Account by parameters
+    queryParameters:
+      externalId:
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            type: Account[]
+
+/cases:
+  /readyToReport:
+    is:
+    - client-id-required
+    - 500-response
+    get:
+      description: Query all OutboundStaging__c records ready to report and did not send yet
+      displayName: Cases ready to report
+      responses:
+        200:
+          body:
+            application/json:
+              description: Array of OutboundStaging__c
+              type: object[]
+  /dbqUploaded:
+    is:
+    - client-id-required
+    - 500-response
+    patch:
+      description: Update OutboundStaging__c after sent report to VA
+      displayName: DBQ Sent update in SF Core
+      responses:
+        200:
+          body:
+            application/json:
+              description: Response from SF
+              type: object[]
+
+/outbound-event:
+  is:
+    - client-id-required
+    - 500-response
+  post:
+    description: Create a new OutboundEventSnapshot record
+    displayName: Create a new OutboundEventSnapshot record
+    body:
+      application/json:
+        description: OutboundEventSnapshot json record
+        type: !include ./dataType/Outbound-dataType.raml
+    responses:
+      201:
+        body:
+          application/json:
+            description: Successfully created
+            type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+  get:
+    description: Query OutboundEventSnapshot records
+    displayName: Get OutboundEventSnapshot records    
+    responses:
+      200:
+        body:
+          application/json:            
+            type: !include ./dataType/Outbound-dataType.raml
+
+  patch:
+    body:
+        application/json:
+          type: !include ./dataType/OutboundUpdate-dataType.raml
+    responses:
+        200:
+          description: Success response on value updated
+          body:
+            application/json:
+              description: Successfully updated
+              type: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/data-types/201-response-type.raml
+
+types:
+  ContentDocumentLinkNew: !include ./dataType/ContentDocumentLinkUpsert-dataType.raml
+  Account:  !include ./dataType/Account-dataType.raml
+  Case:  !include ./dataType/Case-dataType.raml
+  VES_DBQ_Form: !include ./dataType/VES_DBQ_Form-dataType.raml 
+  VES_DBQ_Contention: !include ./dataType/VES_DBQ_Contention-dataType.raml 
+  VES_DBQ_Doc_Reference: !include ./dataType/VES_DBQ_Doc-Reference-dataType.raml 
+  SchemaMasterType: !include ./dataType/SchemaMaster-dataType.raml
+  ContentVersioNew: !include ./dataType/ContentVersionUpsert-dataType.raml
+  ContentVersionType: !include ./dataType/ContentVersion-dataType.raml
+  ContentDocumentLinkType: !include ./dataType/ContentDocumentLink-dataType.raml
+  CenlNotificationType: !include ./dataType/CenlNotificationRespDataType.raml
+  CenlNotificationUpdateType: !include ./dataType/CenlNotificationUpdateDataType.raml
+  VES_ESR: !include ./dataType/VES_ESR-dataType.raml
+  Notification: !include ./dataType/Notification-dataType.raml

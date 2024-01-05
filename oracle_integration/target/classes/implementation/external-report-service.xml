@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	<sub-flow name="oracle-report-service-call" doc:id="c22c0f58-79f7-44fa-9d58-3f438ca0b149" >
+		<set-payload doc:name="Build SOAP Request body" doc:id="90e6c4b5-c066-4310-8745-e1123742e801" value="#[output application/xml&#10;import dw::supplierExternalReport&#10;---&#10;supplierExternalReport::buildExternalReportBody(vars.pubItemName,vars.pubItemValue, vars.reportAbsolutePath)]" />
+		<json-logger:logger doc:name="Before call oracle external report service" doc:id="9740ec76-94f0-4e58-aabc-27dd9f2cce08" config-ref="jsonLoggerConfig" message="Before call oracle external report service" tracePoint="BEFORE_REQUEST" />
+		<http:request method="POST" doc:name="Call oracle external report service" doc:id="8999bdb6-9106-49e2-a887-3b9b9c26a2c1" config-ref="HTTP_Request_configuration_SOAP-Api" path="#[p('app.oracle.api.externalReportPath')]">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/soap+xml"
+}]]]></http:headers>
+		</http:request>
+		<json-logger:logger doc:name="After call oracle external report service" doc:id="85f0bfdf-c0b3-4ce3-a97c-089b01a3ba54" config-ref="jsonLoggerConfig" message="After call oracle external report service" tracePoint="AFTER_REQUEST" />
+	</sub-flow>
+	<sub-flow name="payment-transactions-oracle-report-service" doc:id="3ec8a01e-338f-4199-872e-ed2b77602f6b" >
+		<ee:transform doc:name="Build SOAP ReqBody" doc:id="a7c3b3b9-02e9-484c-885d-74d68453ef35" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/xml
+import dw::externalReportPaymentTransactions
+---
+externalReportPaymentTransactions::buildExternalReportRequestBody(vars.loadReqId, vars.importReqId, vars.reportAbsolutePath)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Before call oracle external report service" doc:id="ed2a1845-e218-4fef-8255-b125747666a1" config-ref="jsonLoggerConfig" message="Before call oracle external report service" tracePoint="BEFORE_REQUEST" />
+		<http:request method="POST" doc:name="Call oracle external report service" doc:id="8a588d6c-7cd8-4d4c-a36e-aae4872064fc" config-ref="HTTP_Request_configuration_SOAP-Api" path="#[p('app.oracle.api.externalReportPath')]" >
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/soap+xml"
+}]]]></http:headers>
+		</http:request>
+		<json-logger:logger doc:name="After call oracle external report service" doc:id="3f034045-6653-4b60-a3ad-1fe70c2e8c1a" config-ref="jsonLoggerConfig" message="After call oracle external report service" tracePoint="AFTER_REQUEST" />
+	</sub-flow>
+	<sub-flow name="payment-confirmation-oracle-report-service" doc:id="b38cc96b-4923-4ec4-b6a1-3c48c24d4b79" >
+		<ee:transform doc:name="Build SOAP ReqBody" doc:id="c0116f15-2b3b-4939-983b-0e33f38809a9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/xml
+import dw::externalReportPaymentConfirmation
+---
+externalReportPaymentConfirmation::buildExternalReportRequestBody(vars.fromDate, vars.toDate, vars.reportAbsolutePath)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Before call oracle external report service" doc:id="0ce6aeb3-8824-4bf6-827b-79b6d07f274f" config-ref="jsonLoggerConfig" message='#["Before call oracle external report service"]' tracePoint="BEFORE_REQUEST" />
+		<logger level="INFO" doc:name="Logger" doc:id="9a3278fa-4bbf-41ae-bce0-3d314b774daf" message="#[payload]"/>
+		<http:request method="POST" doc:name="Call oracle external report service" doc:id="9de938e4-5b7c-4ead-aa73-a662e69181f3" config-ref="HTTP_Request_configuration_SOAP-Api" path="#[p('app.oracle.api.externalReportPath')]" responseTimeout="${http-request.timeout}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/soap+xml"
+}]]]></http:headers>
+		</http:request>
+		<json-logger:logger doc:name="After call oracle external report service" doc:id="1c350d6a-9c12-473b-9bf2-6a1caac1a26d" config-ref="jsonLoggerConfig" message="After call oracle external report service" tracePoint="AFTER_REQUEST" />
+	</sub-flow>	
+	
+</mule>

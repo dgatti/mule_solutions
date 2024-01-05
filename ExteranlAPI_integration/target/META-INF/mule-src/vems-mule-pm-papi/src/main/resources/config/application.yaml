@@ -1,0 +1,62 @@
+#Common App Properties
+http:
+  host: "0.0.0.0"
+  port: "8081"
+https:
+  host: "0.0.0.0"
+  port: "8082"
+
+api:
+  groupId:      "${api.groupId}"
+  artifactId:   "${api.artifactId}"
+  version:      "${api.version}"
+  spec:         ""
+  majorVersion: "v1"
+  
+json:
+  logger:
+    application:
+      name:     "${api.artifactId}"
+      version:  "${api.version}"
+      
+error:
+  domain: "${api.artifactId}"
+  
+target:
+  account:
+    objectName: "Account"
+    externalId: "Account_Id__c"
+
+practiceMatch:
+  basepath: "/services"
+  responses:
+    path: "/opportunities/responses.cfc"
+    httpMethod: "GET"
+  getResponses:
+    method: "GetResponses"
+  getResponse:
+    method: "GetResponse"
+  scheduler:
+    startdate: ""
+    enddate: ""
+
+pnmSapi:
+  basepath: "/api/v1"
+  port: "443"
+  path: "/lead"
+  httpMethod: "POST"
+  methods:
+    get_recordType:               "/recordType"
+    patch_lead:                   "/lead"
+    post_content_version:         "/content-version"
+    post_content_document_link:   "/content-document-link"
+    get_content_version:          "/content-version/{id}"
+    get_case_id:                  "/case"
+
+until:
+  MaxRetries: "3"
+  MsBwRetries: "1000"
+  
+#UTC Time 4hrs ahead of EST.  7:30 EST
+scheduler: 
+  sync: 0 29 11 ? * *

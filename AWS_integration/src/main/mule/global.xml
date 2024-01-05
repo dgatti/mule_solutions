@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:s3="http://www.mulesoft.org/schema/mule/s3"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd   http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd  http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="53db7735-46b0-46ff-92f4-fc43da90d2cf"
+		file="config/${env}-application.yaml"/>
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="94dca92d-c879-40c3-b6e0-8a4bed2bc860"
+		file="config/application.yaml"/>
+	<secure-properties:config
+		name="Secure_Properties_Config" doc:name="Secure Properties Config"
+		doc:id="115c9755-df5b-4bed-a664-aecdefb162ed"
+		file="config/${env}-secure-properties.yaml" key="${encrypt.key}">
+		<secure-properties:encrypt
+			algorithm="Blowfish"/>
+	</secure-properties:config>
+	<s3:config name="awsS3Config"
+		doc:name="Amazon S3 Configuration"
+		doc:id="4a7468ff-8b12-4117-881d-b171ae06ecb7">
+		<s3:connection
+			accessKey="${secure::app.datsi.aws.s3.accessKey}"
+			secretKey="${secure::app.datsi.aws.s3.secretKey}"
+			region="${app.datsi.aws.s3.region}"
+			responseTimeout="${app.datsi.aws.s3.timeout}"
+			responseTimeoutUnit="MILLISECONDS">
+			<reconnection>
+				<reconnect count="3"/>
+			</reconnection>
+		</s3:connection>
+	</s3:config>
+	<s3:config name="awsS3ConfigPNM"
+		doc:name="Amazon S3 PNM Configuration"
+		doc:id="28483a27-982f-4edb-8512-59b2a9f513a5">
+		<s3:connection
+			accessKey="${secure::app.pnm.aws.s3.accessKey}"
+			secretKey="${secure::app.pnm.aws.s3.secretKey}"
+			region="${app.pnm.aws.s3.region}"
+			responseTimeout="${app.pnm.aws.s3.timeout}"
+			responseTimeoutUnit="MILLISECONDS"/>
+	</s3:config>
+	<http:listener-config name="apiHttpListenerConfig">
+		<http:listener-connection
+			host="${https.host}" port="${env.port}" protocol="HTTPS">
+			<tls:context>
+				<tls:key-store type="jks" path="maximus.jks"
+					keyPassword="${secure::https.keyPass}"
+					password="${secure::https.keyPass}"/>
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+	<apikit:config name="apiConfig"
+		api="resource::a49d2bd5-98e7-47cb-be7d-a153583e60a6:vems-mule-aws-sapi:1.0.8:raml:zip:vems-mule-aws-sapi.raml"
+		outboundHeadersMapName="outboundHeaders"
+		httpStatusVarName="httpStatus"/>
+	<api-gateway:autodiscovery apiId="${api.id}"
+		ignoreBasePath="true" doc:name="API Autodiscovery"
+		doc:id="faa4c4cf-5ddb-4bf2-b189-d33ba5b378f1"
+		flowRef="vems-mule-aws-sapi-main"/>
+	<db:config name="Database_Config_postgres"
+		doc:name="Database Config"
+		doc:id="0391ffb9-b1fd-421c-9864-594fefa45368">
+		<db:generic-connection
+			url="jdbc:postgresql://${app.postgres.db.host}:${app.postgres.db.port}/${app.postgres.db.database}"
+			driverClassName="org.postgresql.Driver"
+			user="${secure::app.postgres.db.username}"
+			password="${secure::app.postgres.db.password}"/>
+	</db:config>
+	<configuration doc:name="Configuration"
+		doc:id="941b2d25-f437-4531-b6ad-034d71325ddc"
+		defaultErrorHandler-ref="maximus-geh"/>
+	<cloudhub:config
+		name="CloudHub_Config_OAuth_Client_Credentials">
+		<cloudhub:oauth-client-credentials-connection
+			clientId="${secure::error.cloudhub.client_id}"
+			clientSecret="${secure::error.cloudhub.client_secret}"
+			environment="${error.cloudhub.environment}"
+			anypointPlatformUrl="https://gov.anypoint.mulesoft.com/"/>
+	</cloudhub:config>
+	<http:request-config name="HttpRequest_SfcoreSAPI"
+		doc:name="HTTP Request configuration"
+		doc:id="75af9e5c-6f84-40f0-92ff-2437f0a9cd0a" basePath="/api">
+		<http:request-connection
+			host="${error.sfcoresapi.host}" protocol="HTTPS"
+			port="${error.sfcoresapi.port}">
+			<tls:context>
+				<tls:trust-store insecure="true"/>
+			</tls:context>
+		</http:request-connection>
+	</http:request-config>
+	<json-logger:config name="jsonLoggerConfig"
+		doc:name="JSON Logger Config"
+		doc:id="e79793f9-7db9-4648-8f62-19da4e7484a8" environment="${env}"/>
+	<global-property doc:name="Global Property"
+		doc:id="134eeb2a-4551-4af6-806b-ec3006e40c32" name="env" value="dev"/>
+	<global-property doc:name="Global Property"
+		doc:id="59c34329-1a72-4510-b1cd-c8b17c6d8af7" name="encrypt.key"
+		value="maximus2023"/>
+</mule>

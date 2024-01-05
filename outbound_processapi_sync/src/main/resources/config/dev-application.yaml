@@ -1,0 +1,110 @@
+#Common App Properties
+api:
+  id: "59981"
+
+app:
+  outbound:
+    url:      "https://vems-mule-documents-papi-dev.usg-w1.gov.cloudhub.io/api/s3/objects?key=#1"
+  salesforce:
+    cloud:
+      auth:
+        certPath:      "certs/vems-mule-sfcore-sapi.jks"
+        certAlias:     "app"
+        tokenEndpoint: "https://maximusves--coredev.sandbox.my.salesforce.com/services/oauth2/token"
+        audienceEndpoint: "https://test.salesforce.com"
+      reconnection:
+        frequency:  "2000"
+        attempts:   "2"
+      event:
+        listener:
+          channel:
+            name:  "/event/ClarificationRequestEvent__e"
+        providerAcctUpdate:
+          lstChannel:
+            name: "event/Provider_Account_Update__e"
+        servAppointment:
+          lstChannel:
+            name: "event/Provider_Last_Appointment__e"
+        appointmentScheduled:
+          channel:
+            name: "/event/ServiceAppointment__e"
+        contentionCancelation:
+          channel:
+            name: "/event/Contention_Cancellation_Request_Event__e"
+        appointmentCanceled:
+          channel:
+            name: "/event/Appointment_Cancel_Request_Event__e"
+        appointmentCompleted:
+          channel:
+            name: "/event/AppointmentCompletedEvent__e"
+        providerFreezeSync:
+          channel:
+            name: "/event/Freeze_Created_Updated__e"
+        operatingHoursSync:
+          channel:
+            name: "/event/Operating_Hours_Create_Update__e"    
+        healthcareFacilitySync:
+          channel:
+            name: "/event/Healthcare_Practitioner_Facility_Create__e"
+        providerScorecardSync:
+          lstChannel:
+            name: "event/Scorecard_Update_Create__e"
+        providerTimeslotSync:
+          lstChannel:
+            name: "event/TimeSlot_Update_Create__e"
+
+  s3:
+    api:
+      host: "vems-mule-aws-sapi-dev.usg-w1.gov.cloudhub.io"
+      port: "443"
+      url:  "/api"
+      methods:
+        getObject:    "/s3/objects"
+        postObject:   "/s3/objects"
+    credentials:
+      client_id:     "e14a7d608d8c4565a7430d6dec95f83c"
+      client_secret: "2D68922b82614A5EA280078eD5bD61fB"
+  sfcore:
+    tempDir: "/tmp/"
+    api:
+      host: "vems-mule-sfcore-sapi-dev.usg-w1.gov.cloudhub.io"
+      port: "443"
+      url:  "/api"
+      methods:
+        s3_document:                          "/s3-document"
+        exam_scheduling_request_created:      "/exam-scheduling-request-created"
+        exam_scheduling_request_cancellation: "/exam-scheduling-request-cancellation"
+        rework_exam_scheduling_request:       "/rework-exam-scheduling-request-created"
+        schema_master:                        "/schema-master"
+        content_version:                      "/content-version"
+        content_document_link:                "/content-document-link"
+        log:                                  "/log"
+        log_entry:                            "/log-entry"
+        outbound-event:                       "/outbound-event"
+        esrId:                                "/case-metadata/{esrId}"
+    credentials:
+      client_id:     "e14a7d608d8c4565a7430d6dec95f83c"
+      client_secret: "2D68922b82614A5EA280078eD5bD61fB"
+  sfpnm:
+    api:
+      host: "vems-mule-sfpnm-sapi-dev.usg-w1.gov.cloudhub.io"
+      port: "443"
+      url:  "/api/v1"
+      methods:
+        scorecard:  "/scorecard"
+        timeslot:   "/timeslot"
+      
+error:
+  sfcoresapi:
+    host: "mule-worker-internal-vems-mule-sfcore-sapi-dev.usg-w1.gov.cloudhub.io"    
+    port: "8092"
+    basePath:  "/api"
+  cloudhub:
+    environment: "075a1f44-74c5-485f-a9d3-a73d21437302"
+
+aws:
+  sqs:
+    requestQueue: "https://sqs.us-gov-east-1.amazonaws.com/539901372416/gc-poc-ves-outbound-dev-request-queue"
+    #requestQueue: "https:/sqs.us-gov-east-1.amazonaws.com/539901372416/gc-poc-ves-outbound-dev-xml-request-queue"
+    responseQueue: "https://sqs.us-gov-east-1.amazonaws.com/539901372416/gc-poc-ves-outbound-dev-response-queue"
+    #responseQueue: "https://sqs.us-gov-east-1.amazonaws.com/539901372416/gc-poc-ves-outbound-dev-xml-response-queue"

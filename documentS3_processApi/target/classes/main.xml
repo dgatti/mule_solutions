@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+
+
+	<json-logger:config name="jsonLoggerConfig"
+		doc:name="JSON Logger Config"
+		doc:id="411a31ee-1ba9-48d0-868e-8fa886b8d58e" environment="${env}"/>
+	<sub-flow name="SetHeaders" doc:id="2ee4f9c5-3377-49d9-9354-98556240de73" >
+		<set-variable value="#[%dw 2.0&#10;&#10;output json&#10;---&#10;{&#10;	&quot;client_secret&quot; : Mule::p('secure::app.s3.credentials.client_secret'),&#10;	&quot;client_id&quot; : Mule::p('secure::app.s3.credentials.client_id'),&#10;	(&quot;x-amz-meta-externalId&quot;: vars.contentDocumentId) if(vars.contentDocumentId?)&#10;}]" doc:name="Set Headers" doc:id="48defd94-c45f-4f4d-b641-6d4bc8233b38" variableName="requestSapiHeaders" />
+	</sub-flow>
+	<flow name="get-document-s3-aws-sapi-flow" doc:id="55fc4bfe-41f0-4776-82d8-e56b7c713f02" >
+		<json-logger:logger doc:name="Log Payload Event" doc:id="e99abf7d-6168-484b-8941-0fcab17ce926" config-ref="jsonLoggerConfig" message="START PROCESS EVENT FLOW">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json 
+---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<flow-ref doc:name="SetHeaders" doc:id="c86eef92-78f4-4e36-a591-1a20f15a7032" name="SetHeaders" />
+		<try doc:name="Try" doc:id="80153af8-971e-4ce9-8286-4497d8424741" >
+			<choice doc:name="Route by Source" doc:id="a966ae25-65a2-4e5d-a447-d61c07958807" >
+				<when expression="#[!isEmpty(vars.source) and upper(vars.source) == 'PNM']">
+					<http:request method="GET" doc:name="PNM s3 Bucket (pnm source)" doc:id="613a82ce-3068-43ff-b766-48fcb03085d1" config-ref="httpRequestS3SapiConfig" path="${app.s3.api.methods.getObject}/pnm" responseTimeout="10000" >
+						<reconnect count="4" />
+						<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+						<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"key" : vars.s3KeyObject
+}]]]></http:query-params>
+					</http:request>
+				</when>
+				<otherwise >
+					<http:request method="GET" doc:name="Core s3 Bucket (empty source)" doc:id="e77fd5b5-91d7-4f45-8f70-d97dd5c6639f" path="${app.s3.api.methods.getObject}" responseTimeout="10000" config-ref="httpRequestS3SapiConfig">
+			<reconnect count="4" />
+				<http:headers><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"key" : vars.s3KeyObject
+}]]]></http:query-params>
+		</http:request>
+				</otherwise>
+			</choice>
+			<error-handler >
+				<!-- <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="3c34e147-ed48-4771-b9b9-f30d2a590019" type="HTTP:BAD_REQUEST, HTTP:FORBIDDEN, HTTP:NOT_FOUND">
+				<set-payload value='#[%dw 2.0&#10;output application/java&#10;-&#45;&#45;&#10;{&#10;	errType: error.errorType.asString,&#10;	query: (vars.s3KeyObject default {}),&#10;	message: error.errorMessage, &#10;	Description: error.Description&#10;	&#10;}]' doc:name="Set Payload" doc:id="6a09b08f-0656-4fb2-a73f-f89e6c9e4799" />
+				<json-logger:logger doc:name="Logger" doc:id="80595a39-44b1-4a67-a838-45be38eef72a" config-ref="jsonLoggerConfig" message="An error has occured" tracePoint="EXCEPTION" priority="ERROR" />
+			</on-error-continue>  -->
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4a4c3407-3502-4123-bf15-04647edb4fd8" type="ANY">
+				<json-logger:logger doc:name="Log Exception" doc:id="e75dfe8e-8247-4baa-8c84-e7b0439febf8" config-ref="jsonLoggerConfig" message="Exception" tracePoint="EXCEPTION" priority="ERROR">
+						<json-logger:content ><![CDATA[#[output application/json ---
+{
+    payload: (error.errorType.asString default "") ++  " : " ++ error.detailedDescription
+}]]]></json-logger:content>
+					</json-logger:logger>
+				<ee:transform doc:name="Transform Message" doc:id="1a42700a-5d16-46a2-b623-af784c9d9a8e">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+			</error-handler>
+		</try>
+		<set-variable value="#[%dw 2.0&#10;output application/json &#10;---&#10;attributes.headers&#10;&#10;//payload.parts.file.headers.'Content-Disposition']" doc:name="Set Variable" doc:id="24f964ee-7f2f-46f4-9d46-3bc920c7d069" variableName="outboundHeaders" />
+		<json-logger:logger doc:name="Log Payload Event" doc:id="b50303f6-7a2d-404d-a1ba-2ada2f7a2a1e" config-ref="jsonLoggerConfig" message="START PROCESS EVENT FLOW" tracePoint="AFTER_REQUEST">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json 
+---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload.parts.file.headers.'Content-Disposition'.filename) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</flow>
+	<flow name="post-document-s3-aws-sapi-flow" doc:id="084a9d0f-15b2-4b4e-882d-b399815c5ee4" >
+		<json-logger:logger doc:name="Log Payload Event" doc:id="4dce28ab-28e3-401a-bea0-76d2eacf3acd" config-ref="jsonLoggerConfig" message="START PROCESS EVENT FLOW">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json 
+---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload.parts.file.headers.'Content-Disposition'.filename) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<flow-ref doc:name="SetHeaders" doc:id="b8518a85-ab74-46aa-8bc3-0c72a597f23e" name="SetHeaders" />
+		<try doc:name="Try" doc:id="d4bbe1c6-a5bf-4bf5-8a59-976e7180c846">
+			<!--  <validation:is-null doc:name="Is null file" doc:id="e3c18bb6-295a-458b-87f5-218e1a24aee2" value="#[%dw 2.0&#10;output application/json&#10;-&#45;&#45;&#10;payload.part.file.content]" message='#["File is requeried"]' />
+			<validation:is-null doc:name="Is null name" doc:id="b3f9f56d-32f0-45e5-ab5f-c3bfd3c7a3f0" value="#[%dw 2.0&#10;output application/json&#10;-&#45;&#45;&#10;payload.part.name.content]" message='#["File name is requeried"]' /> -->
+			<choice doc:name="Choice" doc:id="513911f5-8a42-4b4f-97ba-bf7b9b5f6011" >
+				<when expression="#[isEmpty(payload.parts.name.content) or isEmpty(payload.parts.file.content)]" >
+					<ee:transform doc:name="Transform Message" doc:id="4a589fe8-3642-4fd1-b304-6dd0fa3d8975" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: "File name or File content are requeried"
+
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<raise-error doc:name="Raise error" doc:id="c9c9c7f8-7dae-4a1b-b8f9-0ff5baa5bea3" type="ERROR:VALUE_EMPTY" description="A value required is empty"/>
+				</when>
+				<otherwise >
+					<http:request method="POST" doc:name="request-post-xml-event-to-vems-mule-aws-sapi" doc:id="a09bfacd-9870-42fc-8483-1dcc8d84fc66" config-ref="httpRequestS3SapiConfig" path="${app.s3.api.methods.postObject}" responseTimeout="10000">
+			<reconnect count="4" />
+			<http:headers><![CDATA[#[%dw 2.0
+output application/json
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+				</otherwise>
+			</choice>
+			<error-handler>
+				<!--  <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f11a3c98-7452-4646-84c9-69ae3c5a5d85" type="HTTP:BAD_REQUEST, HTTP:FORBIDDEN, HTTP:NOT_FOUND">
+					<set-payload value="#[%dw 2.0&#10;output application/java&#10;-&#45;&#45;&#10;{&#10;	errType: error.errorType.asString,&#10;	query: (payload.name default {}),&#10;	message: error.errorMessage,&#10;	description: error.Description&#10;	&#10;}]" doc:name="Set Payload" doc:id="ceb8dfaf-937b-4eb1-8326-627c3cfe8746" />
+					<json-logger:logger doc:name="Logger" doc:id="1ac670cf-b52c-447c-a98e-6dd9008648ce" config-ref="jsonLoggerConfig" message="An error has occured" tracePoint="EXCEPTION" priority="ERROR" >
+					</json-logger:logger>
+				</on-error-continue> -->
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="59913fc1-4825-44ab-bb86-20ff677f5338">
+					<logger level="INFO" doc:name="Error Logger" doc:id="9278ff31-0d49-4a15-9d43-11c1270244cd" message='#[(error.errorType.asString default "") ++  " : " ++ error.detailedDescription]' />
+					<ee:transform doc:name="Transform Message" doc:id="9d41b6aa-0a56-43cb-aee1-47fdd0885c2f">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<json-logger:logger doc:name="Log Payload Event" doc:id="681eec7d-4ee6-483c-a724-795935943ec7" config-ref="jsonLoggerConfig" message="START PROCESS EVENT FLOW" tracePoint="AFTER_REQUEST">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json 
+---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</flow>
+	<sub-flow name="mainSub_Flow" doc:id="a498f30b-caa3-49b7-a1e7-4789a5114760" >
+		<set-variable value="#[payload.name]" doc:name="Set name" doc:id="a131f584-32d4-4776-8af4-88e10bb01855" variableName="s3KeyObject" />
+	</sub-flow>
+
+
+</mule>

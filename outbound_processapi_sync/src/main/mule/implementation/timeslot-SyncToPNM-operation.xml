@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="salesforce-core-providerTimeslotUpdate-flow" doc:id="9fb18177-2e6b-4ebb-b21b-188ada682283" >
+<salesforce:replay-channel-listener streamingChannel="${app.salesforce.cloud.event.providerTimeslotSync.lstChannel.name}" replayOption="ONLY_NEW" doc:name="SF Core channel listener (Provider_Scorecard_Update__e)" doc:id="4028026d-30f2-44ee-ae34-44d4d071852d" config-ref="salesforceConfig" autoReplay="true" >
+			<reconnect count="4" />
+		</salesforce:replay-channel-listener>
+
+		<json-logger:logger doc:name="Log New Event" doc:id="22541c57-f452-4fb1-bdf9-5fa6037ed5aa" config-ref="jsonLoggerConfig" message="EVENT START: Operating_Hours_Update__e" />
+		<set-payload value="#[%dw 2.0&#10;&#10;output json&#10;---&#10;payload.data.payload]" doc:name="Set Payload" doc:id="1bd88971-b60b-4e3c-b599-beae0283d985" />
+		<choice doc:name="check" doc:id="69366b07-301a-41df-9c1b-0514916f4185" >
+			<when expression="#[!isEmpty(payload.Core_Last_Processed__c) or ((payload.Core_Last_Processed__c) != null)]" >
+				<ee:transform doc:name="mapping Timeslot to SAPI Request" doc:id="2aac26ef-7a9c-4112-be32-366bfe979e9f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json skipNullOn="everywhere"
+---
+
+  {
+    "coreLastProcessed": payload.Core_Last_Processed__c,
+    ("dayOfWeek": payload.DayOfWeek__c) if (!isEmpty(payload.DayOfWeek__c)),
+    ("endTime": payload.EndTime__c) if (!isEmpty(payload.EndTime__c)),
+    ("operatingHoursId": payload.OperatingHoursId__c) if (!isEmpty(payload.OperatingHoursId__c)),
+    ("startTime": payload.StartTime__c) if (!isEmpty(payload.StartTime__c)),
+    "externalId": payload.External_Id__c default '',
+    "coreId": payload.CoreId__c default ''
+  }
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<try doc:name="Try" doc:id="0c5ee1b1-c4d4-40d0-9637-f07aea495789" >
+					<flow-ref doc:name="put-timeslot-request" doc:id="d83da28b-0a51-4f71-bd8c-1ef8d3ccc0e6" name="put-timeslot-pnm-sapi-flow" />
+					<json-logger:logger doc:name="Logger" doc:id="1f76b42f-c89d-4b2f-b9b8-59f6996662b7" config-ref="jsonLoggerConfig" message="EVENT END: Itmeslot_update__e" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="80de8c71-3781-4c8b-aacc-cf6b4a9a2329" >
+							<json-logger:logger doc:name="Error Logger" doc:id="8c821944-aa1a-423a-996b-820540eae0ed" config-ref="jsonLoggerConfig" message="ERROR: Error Returned from  SFPnmSapi: /timeslot" priority="WARN" >
+								<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload),
+    errorDesc:  "Error: " ++ (error.muleMessage.typedValue.error.message default "")
+}]]]></json-logger:content>
+							</json-logger:logger>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<json-logger:logger doc:name="Error Logger" doc:id="1294bee7-5b45-429b-be17-e21e09ff46a9" config-ref="jsonLoggerConfig" message="WARNING: Event received without timeslot" priority="WARN" />
+			</otherwise>
+		</choice>
+		<error-handler ref="event-error-handler" />
+	</flow>
+</mule>

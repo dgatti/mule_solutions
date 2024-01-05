@@ -1,0 +1,51 @@
+#Common App Properties
+api:
+
+  id: "61096"
+  
+app:
+  s3:
+    api:
+      host: "vems-mule-aws-sapi-qa.usg-w1.gov.cloudhub.io"
+      port: "443"
+      url:  "/api"
+      methods:
+        getObject:    "/s3/objects"
+        postObject:   "/s3/objects"      
+    credentials:
+      client_id:     "e14a7d608d8c4565a7430d6dec95f83c"
+      client_secret: "2D68922b82614A5EA280078eD5bD61fB"
+  sfcore:
+    api:
+      host: "vems-mule-sfcore-sapi-qa.usg-w1.gov.cloudhub.io"
+      port: "443"
+      url:  "/api"
+      methods:
+        s3_document:                          "/s3-document"
+        s3_document_update:                   "/s3-document"
+        content-version-s3:                   "/content-version-s3"
+        exam_scheduling_request_created:      "/exam-scheduling-request-created"
+        exam_scheduling_request_cancellation: "/exam-scheduling-request-cancellation"
+        rework_exam_scheduling_request:       "/rework-exam-scheduling-request-created"
+    credentials:
+      client_id:     "e14a7d608d8c4565a7430d6dec95f83c"
+      client_secret: "2D68922b82614A5EA280078eD5bD61fB"
+  sfpnm:
+    api:
+      host: "vems-mule-sfpnm-sapi-qa.usg-w1.gov.cloudhub.io"
+      port: "443"
+      url:  "/api/v1"
+      
+  api:
+    document_papi:
+      url: "https://vems-mule-documents-papi-qa.usg-w1.gov.cloudhub.io/api/s3/objects?key=#1"
+    document_pnm_papi:
+      url: "https://vems-mule-documents-papi-qa.usg-w1.gov.cloudhub.io/api/s3/objects?source=pnm&key=#1"
+  
+  scheduler:
+    sfpnm_to_s3: "0 59 23 ? * * *"
+    sfcore_to_s3: "0 59 23 ? * * *"
+      
+error:
+  cloudhub:
+    environment: "b2adb5f0-4215-43c0-b6c3-3fa1f5480b0b"

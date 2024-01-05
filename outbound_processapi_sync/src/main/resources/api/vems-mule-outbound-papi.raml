@@ -1,0 +1,51 @@
+#%RAML 1.0
+title: Maximus VES Salesforce Core Outbound PAPI
+description: Process API responsible for encapsulating all the events from Salesforce Core
+version: v1
+mediaType: 
+  - application/json
+protocols:
+  - HTTPS
+
+traits:
+  202-trait: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/json/202-trait.raml
+  client-id-required: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/common/client-id-trait.raml
+  correlation-id: !include exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/common/correlation-id-trait.raml
+
+/outbound-event:
+  is:
+    - client-id-required
+    - correlation-id
+    - 202-trait
+  post:
+    body:
+      application/json:
+        description: Service endpoint to post Outbound Request event
+        type: !include ./dataTypes/OutboundRequestEventDataType.raml
+
+/upload-relate-file:
+  is:
+    - client-id-required
+  post:
+    queryParameters:
+      relateToId:
+        type: string
+        description: Salesforce Id to relate with
+        example: "a3nBZ0000002WXpYAM"          
+    body:
+        description: Fail content to upload
+        
+/process:
+  /trigger:
+    is:
+      - client-id-required
+    post:
+      description: Create endpoint to trigger sync manually
+      displayName: trigger sync
+      body:
+        application/json:
+          examples:
+            {
+              "startdate" : "01/01/2020",
+              "enddate" : "01/02/2020"
+            }  

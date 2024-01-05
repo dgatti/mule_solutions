@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<sub-flow name="startPMSyncSubflow" doc:id="d3b23dfb-590b-49ff-bdfa-2cc5df534097" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="6c545098-3437-466a-8fc1-3e2e0ac1b342" name="set-request-sapi-headers-client-id-client-secret" />
+		<flow-ref doc:name="get-practice-match-list" doc:id="23e4006d-4152-4701-87c7-f6b6ebd43c44" name="get-practice-match-list" />
+		<json-logger:logger doc:name="Logger" doc:id="cbd6799c-81b4-4418-b76b-916d49befe70" config-ref="JSONLoggerConfig" message="Practice Match providers about to be updated" tracePoint="AFTER_REQUEST" />
+		<flow-ref doc:name="main-process-each-provider-flow" doc:id="7e4a550e-7d30-44fd-82b5-3afab19162fd" name="main-process-each-provider-flow" />
+	</sub-flow>
+	<sub-flow name="main-persist-content-document-flow" doc:id="84553993-b27e-4b6d-9610-b60657976bc3" >
+		<choice doc:name="Choice" doc:id="14509d50-fc96-440b-999f-273db116f8d2" >
+			<when expression="#[!isEmpty(payload.CVFileName)]">
+				<ee:transform doc:name="Transform ContentVersion Json" doc:id="ebfe0b6f-0cf0-44ea-a0ed-07c073a2778e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Title: payload.CVFileName,
+	PathOnClient: payload.CVFileName,
+	VersionData: payload.CVContents
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<json-logger:logger doc:name="Log ContentVersion Payload" doc:id="02a46773-6b8a-4775-a4a0-0d51ba914af0" config-ref="JSONLoggerConfig" message="ContentVersion Payload" tracePoint="BEFORE_REQUEST"/>
+				<flow-ref doc:name="post-content-version-pnm-sapi-flow" doc:id="fbf66556-babe-4eb7-b96d-7897e7eed290" name="post-content-version-pnm-sapi-flow" />
+				<json-logger:logger doc:name="Log ContentVersion Result" doc:id="20a03687-ca9c-44a2-9a3e-e5abc84aa4c9" config-ref="JSONLoggerConfig" message="ContentVersion Result" tracePoint="AFTER_REQUEST"/>
+				<set-variable value="#[payload.recordId]" doc:name="Set ContentVersionId" doc:id="8ddb5e8b-b255-4df6-8a44-64becb527dce" variableName="contentVersionId"/>
+				<flow-ref doc:name="get-content-version-by-id-pnm-sapi-flow" doc:id="5dc45192-2a82-40eb-8872-c5858369e9a3" name="get-content-version-by-id-pnm-sapi-flow" />
+				<ee:transform doc:name="Transform ContentDocumentLink" doc:id="d21a5b75-fb14-4ff9-bd8b-20f7b4f0a855" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	//LinkedEntityId: vars.contentVersionId,
+	LinkedEntityId: vars.LedObjectID,
+    ContentDocumentId: payload[0].ContentDocumentId
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="Log ContentDocumentLink payload" doc:id="21d710f9-1fa5-471f-8d5c-12d604e197e5" config-ref="JSONLoggerConfig" message="ContentDocumentLink Payload" tracePoint="BEFORE_REQUEST" />
+				<flow-ref doc:name="post-content-document-link-pnm-sapi-flow" doc:id="b96ea693-9671-44ba-9846-a17ede3df211" name="post-content-document-link-pnm-sapi-flow" />
+				<json-logger:logger doc:name="Log ContentDocumentLInk Id" doc:id="de678dc7-85fc-43d8-863b-4fb9ae45c384" config-ref="JSONLoggerConfig" message="Log ContentDocumentLink Id" tracePoint="AFTER_REQUEST"/>
+			</when>
+			<otherwise >
+				<json-logger:logger doc:name="Log End Flow" doc:id="a3cce7e8-9b68-4258-97fb-130d0dd091d6" config-ref="JSONLoggerConfig" message="END FLOW" tracePoint="END"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="main-orchestrate-sfpnm-sapi-flow" doc:id="2dc7f5f0-a34b-4c39-9d3a-b0d4dc92d150" >
+		<set-variable value="#[payload]" doc:name="Set originalPayload" doc:id="b1f13562-bded-4e80-93b6-281dd56f8655" variableName="originalPayload"/>
+		<flow-ref doc:name="get-recordType-pnm-sapi-flow" doc:id="2a16213b-bc02-4035-9763-74de04600ce1" name="get-recordType-pnm-sapi-flow" />
+		<set-variable value="#[payload]" doc:name="Set recordTypeList" doc:id="3b7fdf37-791d-4312-a21b-45e93da6775a" variableName="recordTypeList" />
+		<flow-ref doc:name="get-case-id-by-casenumber-pnm-sapi-flow" doc:id="539ba241-1f1b-448b-bb70-87b99532bbfc" name="get-case-id-by-casenumber-pnm-sapi-flow"/>
+		<ee:transform doc:name="Patch Lead PNM Transform" doc:id="e8629523-c9c8-4e0a-820d-afadab4ab343" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[import dw::module::PracticeMatchToPNM
+
+var jsonPayload = vars.originalPayload.Response map ((item, index) -> 
+{
+	FirstName: item.FirstName default '',
+    LastName: item.LastName default '',
+    HealthCloudGA__SourceSystem__c: "Practice Match",
+    HealthCloudGA__SourceSystemId__c: (item.ResponseID default "") as String,
+    Email: item.EmailAddress default '',
+    Phone: PracticeMatchToPNM::selectPhoneNumber(item.PhoneNumbers) as String default '',
+    HealthCloudGA__CreatedFromLead__c: true,
+    LeadSource: "PracticeMatch",
+    Status: "New",
+    Need_Request__c: payload[0].Id as String default '',
+	//Need_Request__c: "5008M000003gX90QAE",
+    Primary_Specialty__c: PracticeMatchToPNM::mapSpecialty(item.Specialty) as String,
+    RecordTypeId: (vars.recordTypeList filter ($.DeveloperName == "Provider" and $.SobjectType == 'Lead')).Id[0]	
+})
+
+output application/json
+---
+jsonPayload[0]]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="caseId" ><![CDATA[%dw 2.0
+output application/java
+---
+payload[0].Id]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="Log Lead Upsert Payload" doc:id="6ee99cd1-0f5f-41a2-b7e0-bcbd9c274cbc" config-ref="JSONLoggerConfig" message="Lead Upsert Payload" tracePoint="BEFORE_REQUEST"/>
+		<flow-ref doc:name="patch-lead-pnm-sapi-flow" doc:id="175fe1ea-b585-4302-81a3-d74e3e26f551" name="patch-lead-pnm-sapi-flow" />
+		<set-variable value="#[payload.id]" doc:name="Set LedObjectID" doc:id="7aa6f935-de82-4b29-9b7c-f9e40bdcf32a" variableName="LedObjectID"/>
+		<json-logger:logger doc:name="Log Lead Upsert Result" doc:id="59a6655b-f247-4d70-a4d3-4949f6957ebb" config-ref="JSONLoggerConfig" message="Lead Upsert Result" tracePoint="AFTER_REQUEST"/>
+	</sub-flow>
+	<sub-flow name="main-process-each-provider-flow" doc:id="f56183e1-ac1e-4ee0-bb02-ecf01366f0ba" >
+		<foreach doc:name="For Each Provider in payload" doc:id="15337148-b146-4bdf-a65e-a3e1436f9610" collection="#[payload.Responses default []]">
+			<set-variable value="#[payload.AlternateOpportunityID as String]" doc:name="set AlternateOpportunityID" doc:id="364c1de5-b70c-41f6-bfef-6edd78882058" variableName="AlternateOpportunityID" />
+			<set-variable value="#[payload.ResponseID as String]" doc:name="Set responseId" doc:id="c20c7e0f-86b6-4651-8f56-0303420baea5" variableName="responseId" />
+			<json-logger:logger doc:name="Logger" doc:id="014768e1-616b-4982-8c34-fd702c519f93" config-ref="JSONLoggerConfig" message="Provider about to be fetched" tracePoint="BEFORE_REQUEST" />
+			<try doc:name="Try" doc:id="d8db7e0f-e096-4505-bb3f-d730d7b5eef4">
+				<flow-ref doc:name="get-practice-match-provider" doc:id="c6e0b933-0bc3-48da-8f6c-cbe5d6d67554" name="get-practice-match-provider" />
+				<set-variable value="#[payload.Response[0]]" doc:name="Set Practice Match Payload" doc:id="15f7760d-be09-4a14-9faa-df89a84d5c9d" variableName="practiceMatch"/>
+				<json-logger:logger doc:name="Logger" doc:id="6ee1aba5-5238-4cc2-8439-3f5d236ec52c" config-ref="JSONLoggerConfig" message="Provider fetched (excluding CVContents)" tracePoint="AFTER_REQUEST">
+					<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json
+var payloadNoCv = payload.Response map ((value) -> value - "CVContents")
+var log = {"Response": payloadNoCv}
+---
+{
+    payload: log 
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<choice doc:name="Choice" doc:id="e6f7c3bd-f487-4838-8330-8caa5b9d4504">
+					<when expression="#[isEmpty(payload.Response)]">
+						<ee:transform doc:name="Transform Message" doc:id="357024f2-97e2-49e5-b53a-48648e3f699e">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: "Provider with id: " ++ ((vars.responseId default "-") as String) ++ " not found."
+}]]></ee:set-payload>
+							</ee:message>
+							<ee:variables>
+								<ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+							</ee:variables>
+						</ee:transform>
+						<raise-error doc:name="PROVIDER:NOT_FOUND" doc:id="1fff07a4-53c5-4cd4-899d-cb2802c33479" type="PROVIDER:NOT_FOUND" description="Provider not found" />
+					</when>
+					<otherwise>
+						<flow-ref doc:name="main-orchestrate-sfpnm-sapi-flow" doc:id="b6b9f118-7388-4db0-921b-90dc320a58e8" name="main-orchestrate-sfpnm-sapi-flow"/>
+						<set-payload value="#[vars.practiceMatch]" doc:name="Set PracticeMatch" doc:id="366c4713-f152-4da8-9ef7-32c883315dbe" />
+						<flow-ref doc:name="main-persist-content-document-flow" doc:id="d74bbbbe-7e43-4519-bb2a-26d8f800931e" name="main-persist-content-document-flow" />
+					</otherwise>
+				</choice>
+				<error-handler>
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a07313ef-228c-4386-8bbd-de0a75bd071d" >
+						<set-payload value='#[%dw 2.0&#10;output application/java&#10;---&#10;{&#10;	errType: error.errorType.asString,&#10;	errMsg: error.description,&#10;	payload: vars.practiceMatch&#10;	&#10;}]' doc:name="Set Payload" doc:id="0908005e-edf0-46d7-8a15-258c5accc471" />
+						<json-logger:logger doc:name="Logger" doc:id="1f51d97c-d506-4056-b268-828f988261d2" config-ref="JSONLoggerConfig" message="An error has occured" tracePoint="EXCEPTION" priority="ERROR" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</foreach>
+	</sub-flow>
+	<flow name="get-practice-match-provider" doc:id="0d2fa8bf-484b-4c93-bfc6-d58ca6c36843" >
+		<ee:transform doc:name="prepare Practice Match response call" doc:id="814bbe82-2908-4097-b721-e9fa53e6309d" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="queryParams" ><![CDATA[%dw 2.0
+output application/json
+import p from Mule
+---
+{
+	securityToken : p('secure::practiceMatch.securitytoken'),
+	responseid : vars.responseId,
+	method : p('practiceMatch.getResponse.method')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="bea649dc-f921-4823-ba79-f2c2e32ea3ef" >
+			<until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="005a99bd-33f1-48f1-9c2a-f3c1dcc15de1" millisBetweenRetries="${until.MsBwRetries}">
+				<flow-ref doc:name="practice-match-api" doc:id="cd408d04-2aaa-478b-a02b-33f1107ed897" name="practice-match-api" />
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b8e88ee5-3740-4c8d-bf00-d1eb24fbfe47">
+					<ee:transform doc:name="Transform Message" doc:id="47add295-daaf-463d-8c35-360608fcaed6" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="convert payload to JSON" doc:id="7a5997d4-a614-43be-a3ee-748fc777ab91" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+read(payload,"application/json") default null]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-practice-match-list" doc:id="9620047d-1af3-476a-93e6-b5283665343f" >
+		<ee:transform doc:name="prepare Practice Match responses call" doc:id="81554e42-6d71-482d-9ad7-3194ec9030b9">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="queryParams"><![CDATA[%dw 2.0
+output application/json
+import p from Mule
+---
+{
+	securityToken : p('secure::practiceMatch.securitytoken'),
+	method : p('practiceMatch.getResponses.method'),
+	enddate : vars.endDate,
+	startdate : vars.startDate
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="af860eff-3dc5-4471-ae71-58f4ed72a8e1" >
+			<until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="199c0a99-0988-497e-b649-38c149c048ad" millisBetweenRetries="${until.MsBwRetries}">
+				<flow-ref doc:name="practice-match-api" doc:id="ff1fea6d-2222-4735-8f5e-12ccd10f2313" name="practice-match-api" />
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7a7488bc-7b61-48bb-9bb8-22b0cb81a942" type="ANY">
+					<ee:transform doc:name="Transform Message" doc:id="b889a069-e356-4e8d-96ee-0e2c2ce9ac03" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="7806029d-ac23-4984-8bf2-ec1911d1604c" >
+			<when expression="#[isEmpty(payload)]">
+				<logger level="ERROR" doc:name="Logger" doc:id="9466fc7a-8d16-456c-a4cb-bf4a5abf71fb" message='#[{&#10;	message: "The query result is empty",&#10;	enddate : vars.endDate,&#10;	startdate : vars.startDate&#10;}]' />
+				<ee:transform doc:name="Transform Message" doc:id="1caee4c8-6e56-46d7-b026-5821a394d215">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: "Request with: " ++ ((vars.startDate) as String) ++ "and" ++ ((vars.endDate) as String) ++ "as parameters not found."
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<raise-error doc:name="Raise error SourceEmpty" doc:id="302193b3-9543-4dfb-a0f0-d3ff99e48e0f" type="SOURCE:EMPTY" description="Not found values for this query"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="convert payload to JSON" doc:id="72a0dc34-dfaf-42af-a9d4-2c0c0ddbb064">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+read(payload,"application/json")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="update-pnm-providers" doc:id="095e9d47-7761-4ded-8333-5fc7093eaf6c" initialState="started">
+		<scheduler doc:name="Scheduler" doc:id="ecba6a96-c29b-4890-bfe1-d6fb6b18b09c" >
+			<scheduling-strategy >
+				<cron expression="${scheduler.sync}" />
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="currentDate" doc:id="b2005f1b-e583-4c26-8d23-e244c7b8c767" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="currentDate" ><![CDATA[%dw 2.0
+output application/json
+---
+now() as String {format: "y/MM/dd"}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieve OS lastEndDate" doc:id="3d3bfc83-1227-41ca-a43d-551071c2ff14" key="PMLastEndDate" target="lastEndDate" objectStore="Object_store_pm_papi">
+				<os:default-value><![CDATA[#[vars.currentDate]]]></os:default-value>
+		</os:retrieve>
+		<logger level="INFO" doc:name="Log Current Time - OS" doc:id="1297a81d-69d1-4e16-9fab-42840355ff37" message='#["OS lastEndDate: "   ++ vars.lastEndDate as String]' />
+		<ee:transform doc:name="set start/End Date" doc:id="804b29ba-cc4c-4cad-92ae-9823aace135e">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="startDate"><![CDATA[vars.lastEndDate default vars.currentDate
+]]></ee:set-variable>
+				<ee:set-variable variableName="endDate"><![CDATA[vars.currentDate
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+<json-logger:logger doc:name="Logger" doc:id="0e1a118a-d4b7-46bd-82f6-3e44daaa6f16" config-ref="JSONLoggerConfig" message="Define Date Period execution">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    StartDate: vars.startDate,
+    EndDate: vars.endDate
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<!-- [STUDIO:"set thisDay1"]		<ee:transform doc:name="set thisDay1" doc:id="d825bded-f89d-4bed-908b-b372e920ef70">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="startDate"><![CDATA[%dw 2.0
+output application/json
+
+
+//var beforeDay = "2023/06/05"
+var beforeDay = now()
+
+&#45;&#45;-
+beforeDay as String {format: "y/MM/dd"}&#93;&#93;></ee:set-variable>
+				<ee:set-variable variableName="endDate"><![CDATA[%dw 2.0
+output application/json
+
+var thisDay = now()
+
+&#45;&#45;-
+thisDay as String {format: "y/MM/dd"}&#93;&#93;></ee:set-variable>
+			</ee:variables>
+		</ee:transform> [STUDIO] -->
+		<flow-ref doc:name="startPMSyncSubflow" doc:id="32ed1af9-eaf6-4b44-8a60-982b26e9406e" name="startPMSyncSubflow" />
+		<os:store doc:name="Store PMLastEndDate" doc:id="527f1982-f438-42b3-847f-368eef9ce6d1" key="PMLastEndDate" objectStore="Object_store_pm_papi">
+						<os:value><![CDATA[#[vars.currentDate]]]></os:value>
+					</os:store>
+	</flow>
+</mule>

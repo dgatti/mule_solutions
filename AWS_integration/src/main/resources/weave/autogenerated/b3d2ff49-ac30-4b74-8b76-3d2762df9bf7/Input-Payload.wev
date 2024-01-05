@@ -1,0 +1,8 @@
+%dw 2.0
+
+type auto_b3d2ff49_ac30_4b74_8b76_3d2762df9bf7_Input_Payload = {
+  message: String, 
+  url: String, 
+  _?: Any
+}
+

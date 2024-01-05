@@ -1,0 +1,11 @@
+#Common App Properties
+api:
+  id: "58040"
+
+app:
+  datsi:
+    aws:
+      s3:
+        region: "us-gov-east-1"
+        bucket: "pdf-app-s3-js-poc"
+        timeout: "10000"

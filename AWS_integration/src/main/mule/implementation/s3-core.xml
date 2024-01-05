@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:s3="http://www.mulesoft.org/schema/mule/s3"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="get-s3object-core"
+		doc:id="53940905-58d7-40a1-b8bc-b1f267f20719">
+		<json-logger:logger doc:name="Log Request" doc:id="6517cb0b-7936-42f6-a470-e4c662da11a0" config-ref="jsonLoggerConfig" message="GET S3 OBJECT">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(vars.s3ObjectKey) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<try doc:name="Try" doc:id="7a57b18c-35a9-4def-88c5-83e6d8af75b3" >
+			<s3:get-object doc:name="Get Object" doc:id="c9de9205-1eba-4f74-86ed-98f009a1870d" config-ref="awsS3Config" bucketName="${app.datsi.aws.s3.bucket}" key="#[vars.s3ObjectKey]">
+			<repeatable-in-memory-stream />
+			<reconnect count="3" />
+		</s3:get-object>
+			<set-variable value="#[true]" doc:name="Set fileExists" doc:id="83089084-0fd3-404f-80c2-1455293ace8f" variableName="fileExists"/>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="232dc461-fdeb-42c6-bab8-55b3368bbbf3" type="S3:NO_SUCH_KEY">
+					<ee:transform doc:name="httpStatus and error payload" doc:id="28bb5a92-68d7-4593-906a-0bdc172a21cd" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "error": {
+        "code": "400",
+        "reason": "NO_SUCH_KEY",
+        "message": "The specified key [$(vars.s3ObjectKey)] does not exist",
+        "transaction": correlationId
+    }
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="httpStatus" ><![CDATA[404]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<set-variable value="#[false]" doc:name="Set fileExists" doc:id="f4682256-9ce1-4c59-80f8-01d9a61a091f" variableName="fileExists" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</flow>
+	
+	
+	<flow name="list-bucket-objects-core"
+		doc:id="07151079-5587-4ebe-bd53-00a28e3ae464">
+		<json-logger:logger doc:name="Log List Bucket Objects" doc:id="180173ec-77f0-4057-b0c2-7d829dde2663" config-ref="jsonLoggerConfig" message="List Bucket Objects">
+			<json-logger:content ><![CDATA[#[output application/json ---
+{
+    bucket: vars.bucket
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<s3:list-objects doc:name="List Objects"
+			doc:id="882d554c-9dd0-4bb9-b3de-a520d67d20c3"
+			config-ref="awsS3Config" bucketName="#[vars.bucket]" prefix="#[vars.prefix]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5ffec685-2319-4f8b-9b4a-9c6f2db75053" type="S3:BAD_REQUEST, S3:NO_SUCH_BUCKET, S3:S3_ERROR, S3:SERVICE_ERROR">
+				<json-logger:logger doc:name="Log No Such Bucket" doc:id="ba6d876a-bdd6-4548-a894-7e435c17af95" config-ref="jsonLoggerConfig" message="Bucket not found" priority="ERROR"/>
+				<set-variable value="404" doc:name="Set 404" doc:id="3f5f64c9-8c28-450d-b73d-8637efe82e0b" variableName="httpStatus"/>
+				<ee:transform doc:name="Transform Message" doc:id="f6d450b1-d911-4903-830c-61658997c567" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: "BUCKET $(payload) NOT FOUND",
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+	
+	<flow name="create-s3object-core" doc:id="ec0b30dc-7293-4338-9343-090f37b1796d">
+		<json-logger:logger doc:name="Log Request" doc:id="02a19c91-bb77-4adb-a500-4cb4b014c712" config-ref="jsonLoggerConfig" message="PUT S3 OBJECT">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(vars.s3ObjectKey) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<s3:put-object doc:name="Put Object" doc:id="d966d497-91ba-487f-afca-3d732120a5ac" config-ref="awsS3Config" bucketName="${app.datsi.aws.s3.bucket}" storageClass="STANDARD" key="#[vars.s3ObjectKey]" />
+	</flow>
+	<flow name="copy-file-to-new-folder" doc:id="7fac9ab5-6e9e-4725-a5b4-cc51859ef318" >
+		<json-logger:logger doc:name="Log Copy File Attributes" doc:id="8e37c47d-033f-41bd-99b6-6a2051b07c9c" config-ref="jsonLoggerConfig" message="Copy File Attributes" tracePoint="BEFORE_REQUEST"/>
+		<s3:copy-object doc:name="Copy Object" doc:id="f54d28b1-658a-416c-9286-0000e5ccceca" config-ref="awsS3Config" sourceBucketName="#[payload.bucketOrigin]" sourceKey="#[payload.keyOrigin]" destinationBucketName="#[payload.bucketDestination]" destinationKey="#[payload.keyDestination]" destinationAcl="PRIVATE" storageClass="STANDARD"/>
+	</flow>
+	<flow name="delete-object" doc:id="544d981c-d474-4478-b05a-dc1fb6a1c5a9" >
+		<json-logger:logger doc:name="Log Payload" doc:id="afed378c-24b8-433c-b44a-ea19df2cb37c" config-ref="jsonLoggerConfig" message="Payload" tracePoint="BEFORE_REQUEST" />
+		<s3:delete-object doc:name="Delete Object" doc:id="11bd7f2c-5bdc-44bc-ab52-d849be93ebda" config-ref="awsS3Config" bucketName="${app.datsi.aws.s3.bucket}" key="#[payload.key]"/>
+	</flow>
+	
+	
+	
+</mule>

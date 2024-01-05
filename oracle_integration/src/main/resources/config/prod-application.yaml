@@ -1,0 +1,9 @@
+#Common App Properties
+api:
+  id: "60157"
+        
+app:
+  oracle:
+    api:
+      host: "changeme"
+      port: "443"

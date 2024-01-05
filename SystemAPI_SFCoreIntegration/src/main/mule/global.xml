@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:salesforce-composite="http://www.mulesoft.org/schema/mule/salesforce-composite" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit        http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/mule-apikit          http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/http       http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd   http://www.mulesoft.org/schema/mule/core        http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/salesforce        http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd  http://www.mulesoft.org/schema/mule/api-gateway        http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/secure-properties        http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd http://www.mulesoft.org/schema/mule/salesforce-composite http://www.mulesoft.org/schema/mule/salesforce-composite/current/mule-salesforce-composite.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd">
+    <configuration-properties doc:name="Configuration properties" doc:id="32f7d76e-4872-4722-9cc3-44ca77671fbf" file="config/${env}-application.yaml" />
+    <configuration-properties doc:name="Configuration properties" doc:id="a441e785-86c6-46c2-ae1d-e0ecdeb01ed1" file="config/application.yaml" />
+    <http:listener-config name="apiHttpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${env.port}" protocol="HTTPS">
+            <tls:context>
+                <tls:trust-store insecure="true" />
+                <tls:key-store type="jks" path="maximus.jks" keyPassword="${secure::https.keyPass}" password="${secure::https.keyPass}" />
+            </tls:context>
+        </http:listener-connection>
+    </http:listener-config>
+    <apikit:config name="apiConfig" api="resource::a49d2bd5-98e7-47cb-be7d-a153583e60a6:vecs-mule-sfcore-sapi:1.0.70:raml:zip:vems-mule-sfcore-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" disableValidations="true" />
+    <salesforce:sfdc-config name="salesforceConfig" doc:name="Salesforce Config" doc:id="b60df010-01ce-4089-b995-79073045c9c6" readTimeout="10000" readTimeoutUnit="MILLISECONDS">
+        <salesforce:jwt-connection consumerKey="${secure::app.salesforce.cloud.auth.consumerKey}" keyStore="${app.salesforce.cloud.auth.certPath}" storePassword="${secure::app.salesforce.cloud.auth.certPassword}" certificateAlias="${app.salesforce.cloud.auth.certAlias}" principal="${secure::app.salesforce.cloud.auth.username}" tokenEndpoint="${app.salesforce.cloud.auth.tokenEndpoint}" audienceUrl="${app.salesforce.cloud.auth.audienceEndpoint}">
+            <reconnection>
+                <reconnect frequency="${app.salesforce.cloud.reconnection.frequency}" count="${app.salesforce.cloud.reconnection.attempts}" />
+            </reconnection>
+        </salesforce:jwt-connection>
+    </salesforce:sfdc-config>
+    <secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="56c87f1e-f794-4211-b9c8-1d9e5c1e064a" file="config/${env}-secure-properties.yaml" key="${encrypt.key}">
+        <secure-properties:encrypt algorithm="Blowfish" />
+    </secure-properties:config>
+    <api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="915d841b-2be1-4377-bb15-757d9f31f8a4" flowRef="vems-mule-sfcore-sapi-main" />
+    <json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="2dbb7e12-d0e8-4b03-ad52-c062f327ce4b" environment="${env}" />
+    <salesforce-composite:composite-config name="Salesforce_Composite_Config" doc:name="Salesforce Composite Config" doc:id="9691e555-c5d2-4c44-a2e1-469b591f4495">
+        <salesforce-composite:oauth-jwt-connection consumerKey="${secure::app.salesforce.cloud.auth.consumerKey}" keyStore="${app.salesforce.cloud.auth.certPath}" storePassword="${secure::app.salesforce.cloud.auth.certPassword}" certificateAlias="${app.salesforce.cloud.auth.certAlias}" principal="${secure::app.salesforce.cloud.auth.username}" tokenEndpoint="${app.salesforce.cloud.auth.tokenEndpoint}" audienceUrl="${app.salesforce.cloud.auth.audienceEndpoint}">
+            <reconnection>
+                <reconnect frequency="${app.salesforce.cloud.reconnection.frequency}" count="${app.salesforce.cloud.reconnection.attempts}" />
+            </reconnection>
+        </salesforce-composite:oauth-jwt-connection>
+    </salesforce-composite:composite-config>
+    <ee:object-store-caching-strategy name="Caching_SFToken_Strategy" doc:name="Caching Strategy" doc:id="d771c104-2351-483e-a438-79090dc3c063" keyGenerationExpression="SalesforceToken">
+        <os:private-object-store alias="sfTokenCache" maxEntries="20" entryTtl="3600" expirationInterval="60" expirationIntervalUnit="SECONDS" />
+    </ee:object-store-caching-strategy>
+    <http:request-config name="HTTP_Request_configuration_SFCore_RestApi" doc:name="HTTP Request configuration" doc:id="e0603a0b-2a8c-49f9-b75b-ac7adb05e8bf" responseTimeout="${app.salesforce.cloud.api.respTimeout}">
+        <http:request-connection protocol="HTTPS" host="${app.salesforce.cloud.api.host}">
+            <reconnection>
+                <reconnect />
+            </reconnection>
+        </http:request-connection>
+    </http:request-config>
+    <http:request-config name="httpRequestSFPnmSapiConfig" doc:name="HTTP Request configuration" doc:id="fe2e8b37-c982-42c1-b7dd-8f3f51be8a76" responseTimeout="${app.sfpnm.api.timeout}" basePath="${app.sfpnm.api.url}">
+        <http:request-connection host="${app.sfpnm.api.host}" port="${app.sfpnm.api.port}" protocol="HTTPS">
+        	<reconnection failsDeployment="true">
+                <reconnect count="4" />
+            </reconnection>
+        	<tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+        </http:request-connection>
+    </http:request-config>
+    <ee:object-store-caching-strategy name="PNMRecordType_Caching_Strategy" doc:name="Caching Strategy" doc:id="a6e7a2c4-3c7a-4fd9-bfe9-d7bdedee4b4f" keyGenerationExpression="#[&quot;PNMRecordType&quot;]">
+        <os:private-object-store alias="pnmRecTypeIdCache" entryTtl="23" entryTtlUnit="HOURS" />
+    </ee:object-store-caching-strategy>
+    <ee:object-store-caching-strategy name="CORERecordType_Caching_Strategy" doc:name="Caching Strategy" doc:id="38e63133-1b8d-4313-9fc3-72204105e5e1" keyGenerationExpression="#[&quot;CORERecordType&quot;]">
+        <os:private-object-store alias="coreRecTypeIdCache" entryTtl="23" entryTtlUnit="HOURS" />
+    </ee:object-store-caching-strategy>
+    <configuration doc:name="Configuration" doc:id="32e0a5a0-ce21-401b-8d28-9fb663ee296f" defaultErrorHandler-ref="maximus-geh" />
+    <cloudhub:config name="CloudHub_Config_OAuth_Client_Credentials">
+        <cloudhub:oauth-client-credentials-connection clientId="${secure::error.cloudhub.client_id}" clientSecret="${secure::error.cloudhub.client_secret}" environment="${error.cloudhub.environment}" anypointPlatformUrl="https://gov.anypoint.mulesoft.com/" />
+    </cloudhub:config>
+    <http:request-config name="HttpRequest_SfcoreSAPI" doc:name="HTTP Request configuration" doc:id="17ef8435-7e11-4ab1-855d-b84a2f7252d9" basePath="/api">
+        <http:request-connection host="${error.sfcoresapi.host}" protocol="HTTPS" >
+        	<reconnection failsDeployment="true">
+                <reconnect count="4" />
+            </reconnection>
+            <tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+        </http:request-connection>
+    </http:request-config>
+</mule>

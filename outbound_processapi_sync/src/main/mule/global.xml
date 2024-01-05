@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd  http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd  http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit        http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/mule-apikit          http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/http       http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd   http://www.mulesoft.org/schema/mule/core        http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/salesforce        http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd  http://www.mulesoft.org/schema/mule/api-gateway        http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/secure-properties        http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd       http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd       http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd">
+    <configuration-properties doc:name="Configuration properties" doc:id="32f7d76e-4872-4722-9cc3-44ca77671fbf" file="config/${env}-application.yaml" />
+    <configuration-properties doc:name="Configuration properties" doc:id="a441e785-86c6-46c2-ae1d-e0ecdeb01ed1" file="config/application.yaml" />
+    <http:listener-config name="apiHttpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
+            <tls:context>
+                <tls:key-store type="jks" path="maximus.jks" keyPassword="${secure::https.keyPass}" password="${secure::https.keyPass}" />
+            </tls:context>
+        </http:listener-connection>
+    </http:listener-config>
+    <apikit:config name="apiConfig" api="resource::a49d2bd5-98e7-47cb-be7d-a153583e60a6:vems-mule-outbound-papi:1.0.11:raml:zip:vems-mule-outbound-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" disableValidations="true" />
+    <salesforce:sfdc-config name="salesforceConfig" doc:name="Salesforce Config" doc:id="2b4d85e4-2506-4443-8f58-ffd97d6104b9" readTimeout="10000" readTimeoutUnit="MILLISECONDS">
+        <salesforce:jwt-connection consumerKey="${secure::app.salesforce.cloud.auth.consumerKey}" keyStore="${app.salesforce.cloud.auth.certPath}" storePassword="${secure::app.salesforce.cloud.auth.certPassword}" certificateAlias="${app.salesforce.cloud.auth.certAlias}" principal="${secure::app.salesforce.cloud.auth.username}" tokenEndpoint="${app.salesforce.cloud.auth.tokenEndpoint}" audienceUrl="${app.salesforce.cloud.auth.audienceEndpoint}" objectTTL="300">
+            <reconnection>
+                <reconnect frequency="${app.salesforce.cloud.reconnection.frequency}" count="${app.salesforce.cloud.reconnection.attempts}" />
+            </reconnection>
+        </salesforce:jwt-connection>
+    </salesforce:sfdc-config>
+    <secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="56c87f1e-f794-4211-b9c8-1d9e5c1e064a" file="config/${env}-secure-properties.yaml" key="${encrypt.key}">
+        <secure-properties:encrypt algorithm="Blowfish" />
+    </secure-properties:config>
+    <api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="915d841b-2be1-4377-bb15-757d9f31f8a4" flowRef="api-template-main" />
+    <json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="4c9a75ed-6fc7-4a22-954c-74c7a83b7ad7" environment="${env}" />
+    <http:request-config name="httpRequestS3SapiConfig" doc:name="HTTP Request configuration" doc:id="1837c7cc-8f7d-4aa0-b240-a8f9ec89556d" responseTimeout="10000" basePath="${app.s3.api.url}">
+        <http:request-connection host="${app.s3.api.host}" port="${app.s3.api.port}" protocol="HTTPS">
+            <reconnection failsDeployment="true">
+                <reconnect count="4" />
+            </reconnection>
+        </http:request-connection>
+    </http:request-config>
+    <http:request-config name="httpRequestSFCoreSapiConfig" doc:name="HTTP Request configuration" doc:id="84fb18ab-1cce-4642-bbc1-398c4e0aea68" responseTimeout="10000" basePath="${app.sfcore.api.url}">
+        <http:request-connection host="${app.sfcore.api.host}" port="${app.sfcore.api.port}" protocol="HTTPS">
+            <reconnection failsDeployment="true">
+                <reconnect count="4" />
+            </reconnection>
+			<tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+        </http:request-connection>
+    </http:request-config>
+    <http:request-config name="httpRequestSFPnmSapiConfig" doc:name="HTTP Request configuration" doc:id="ffa12ba6-1992-4225-bdad-e7bfd20c74ce" responseTimeout="10000" basePath="${app.sfpnm.api.url}">
+        <http:request-connection host="${app.sfpnm.api.host}" port="${app.sfpnm.api.port}" protocol="HTTPS">
+            <reconnection failsDeployment="true">
+                <reconnect count="4" />
+            </reconnection>
+        </http:request-connection>
+    </http:request-config>
+    <xml-module:config name="xmlValidateConfig" doc:name="XML Config" />
+    <validation:config name="validationConfig" doc:name="Validation Config" doc:id="70164ee5-90ff-4714-917c-f2fa2b0ed969" />
+    <file:config name="fileConfig" doc:name="File Config" doc:id="29f53dbc-bbb2-4236-8cdc-9d669db6eab6">
+        <file:connection workingDir="${app.sfcore.tempDir}">
+            <reconnection failsDeployment="true">
+                <reconnect count="4" />
+            </reconnection>
+        </file:connection>
+    </file:config>
+    <os:config name="objectStoreConfig" doc:name="ObjectStore Config" doc:id="f0cdfe46-353c-454f-82b0-e955d6ca000a">
+        <os:connection>
+            <reconnection>
+                <reconnect count="4" />
+            </reconnection>
+        </os:connection>
+    </os:config>
+    <os:object-store name="objectStore" doc:name="Object store" doc:id="760d4d8f-1e38-460e-b4a5-e491236bb944" maxEntries="100" entryTtl="24" entryTtlUnit="HOURS" expirationIntervalUnit="HOURS" config-ref="objectStoreConfig" persistent="false" />
+    <cloudhub:config name="CloudHub_Config_OAuth_Client_Credentials">
+        <cloudhub:oauth-client-credentials-connection clientId="${secure::error.cloudhub.client_id}" clientSecret="${secure::error.cloudhub.client_secret}" environment="${error.cloudhub.environment}" anypointPlatformUrl="https://gov.anypoint.mulesoft.com/" />
+    </cloudhub:config>
+    <sqs:config name="awsSqsConfig" doc:name="awsSqsConfig" doc:id="a19a387a-7faf-4fcd-82aa-b825af6e21d4">
+        <sqs:basic-connection testQueueArn="${secure::aws.sqs.arn}" accessKey="${secure::aws.sqs.accessKey}" secretKey="${secure::aws.sqs.secretKey}" region="us-gov-east-1" />
+    </sqs:config>
+</mule>

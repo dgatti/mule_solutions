@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="post-provider-freeze-event-pnm-sapi-flow" doc:id="63a03b10-85d8-4048-83b4-0f57504305b1" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="ed734628-7a49-4293-a62b-877c5593ab45" name="set-request-sapi-headers-client-id-client-secret" />
+		<http:request method="POST" doc:name="post-provider-freeze-event-pnm-sapi" doc:id="6e157f3b-a20e-43c2-9b7c-84c3a7ddf823" config-ref="httpRequestSFPnmSapiConfig" path="/provider-freeze" outputEncoding="UTF-8" responseTimeout="10000" correlationId="#[correlationId]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="post-operating-hours-pnm-sapi-flow" doc:id="c247ae38-aace-4917-9f88-a31891e6dc81" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="84ca4d22-ee6c-43a1-bf94-067e9b70f98b" name="set-request-sapi-headers-client-id-client-secret" />
+		<http:request method="POST" doc:name="post-operating-hours-pnm-sapi" doc:id="45145985-f1ce-47dc-9252-e84391d15ee3" config-ref="httpRequestSFPnmSapiConfig" path="/operating-hours" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="post-healthcare-provider-facility-pnm-sapi-flow" doc:id="a6a97a24-051e-4e2c-92b7-9023e86abe87" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="67680c74-d50a-48cc-9def-7b580d8e0c64" name="set-request-sapi-headers-client-id-client-secret" />
+		<http:request method="POST" doc:name="post-healthcare-practitioner-facility-pnm-sapi" doc:id="4db187bc-3f46-4fa5-83dc-4d3b4f39c879" config-ref="httpRequestSFPnmSapiConfig" path="/healthcare-practitioner-facility" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="patch-account-pnm-sapi-flow" doc:id="6ed0f2df-4bc0-4af1-99b9-affa9c03966f" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="a88c5590-65a4-4f1a-b0ae-5761637f7702" name="set-request-sapi-headers-client-id-client-secret" />
+		<http:request method="PATCH" doc:name="patch-account-pnm-sapi" doc:id="aec3dd50-2886-4bf0-a204-c9885522c586" config-ref="httpRequestSFPnmSapiConfig" path="/account" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<sub-flow name="set-request-sapi-headers-client-id-client-secret" doc:id="e90c6ecb-68e7-46ad-9d30-56e992beda0a" >
+		<set-variable value="#[%dw 2.0&#10;&#10;output json&#10;---&#10;{&#10;	&quot;client_secret&quot; : Mule::p('secure::app.sapi.credentials.clientSecret'),&#10;	&quot;client_id&quot; : Mule::p('secure::app.sapi.credentials.clientId')&#10;}]" doc:name="Set Headers" doc:id="75f3c2d6-8ed1-407d-b1aa-1df49d789357" variableName="requestSapiHeaders" />
+	</sub-flow>
+	<flow name="post-scorecard-pnm-sapi-flow" doc:id="63b0186a-3a01-451b-a1b4-d0f8f18b6709" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="71da4580-e13b-4b39-a1f9-0300704c6b14" name="set-request-sapi-headers-client-id-client-secret" />
+		<http:request method="POST" doc:name="POST: /scorecard" doc:id="b0be740c-706c-49f6-8913-237853e751ef" config-ref="httpRequestSFPnmSapiConfig" path="${app.sfpnm.api.methods.scorecard}" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="put-timeslot-pnm-sapi-flow" doc:id="88212a32-6bf9-4314-b13b-39613d25cbe1" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="71c267c1-0a4b-4b8f-a8ee-b5eec3ca74cb" name="set-request-sapi-headers-client-id-client-secret" />
+		<http:request method="PUT" doc:name="PUT: /timeslot" doc:id="a6fbeafb-42d3-414e-a194-bd6fb0c1ecbf" config-ref="httpRequestSFPnmSapiConfig" path="${app.sfpnm.api.methods.timeslot}" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+</mule>

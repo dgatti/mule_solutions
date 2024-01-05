@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:module-error-handler-plugin="http://www.mulesoft.org/schema/mule/module-error-handler-plugin"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/module-error-handler-plugin http://www.mulesoft.org/schema/mule/module-error-handler-plugin/current/mule-module-error-handler-plugin.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	
+	
+	<error-handler name="api-error-handler">
+		<on-error-propagate enableNotifications="true"
+			logException="true" doc:name="On Error Propagate"
+			doc:id="3d0958dd-ce68-43bd-94e1-a699d4b3c62f">
+			<json-logger:logger doc:name="Log Exception" 
+				config-ref="jsonLoggerConfig"
+				doc:id="e39fe198-d7aa-401e-90e0-cb2865ea3228" priority="ERROR"
+				tracePoint="EXCEPTION" message="An error has occured"/>
+			<module-error-handler-plugin:process-error
+				doc:name="Process Error"
+				doc:id="1d795cc2-218e-48cc-b749-411a3c4c05a5"/>
+			<set-variable value="#[attributes.httpStatus]"
+				doc:name="Set Status" doc:id="a012e0ea-984f-404e-a87e-dd459df02f9c"
+				variableName="httpStatus"/>
+			<flow-ref doc:name="main-error-handler-flow" doc:id="701af249-5c99-4c8c-a8e6-2ed897080444" name="main-error-handler-flow" />
+			<json-logger:logger
+				doc:name="Log End with Exception"
+				doc:id="b1ef7bd4-7cf4-47b2-8fe4-bcbc08a29183" priority="ERROR"
+				tracePoint="END" message="Finished with Error"
+				config-ref="jsonLoggerConfig"/>
+		</on-error-propagate>
+	</error-handler>
+	<error-handler name="event-error-handler" doc:id="0299dcca-99aa-40b5-8ede-dd9a8d5cf344">
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="79672650-3220-4b3d-b317-100df079d579">
+			<json-logger:logger doc:name="Log Exception" doc:id="9d4d9c6c-3f07-4d7f-9b47-b050f4c7f177" config-ref="jsonLoggerConfig" message="An error has occured" tracePoint="EXCEPTION" priority="ERROR" />
+			<module-error-handler-plugin:process-error doc:name="Process Error" doc:id="4789b383-5ef8-47af-b088-bc1a3332bdc3" />
+			<set-variable value="#[attributes.httpStatus]" doc:name="Set Status" doc:id="96a55626-a152-4ff3-97dd-f94881b4bff4" variableName="httpStatus" />
+			<flow-ref doc:name="main-error-handler-flow" doc:id="dc2ba3b5-8a7c-46dd-999f-09f98aa5a92a" name="main-error-handler-flow" />
+			<json-logger:logger doc:name="Log End with Exception" doc:id="770c3815-ea9c-42f0-8e48-69cbd17a5715" config-ref="jsonLoggerConfig" message="Finished with Error" tracePoint="END" priority="ERROR" />
+		</on-error-continue>
+	</error-handler>
+	<sub-flow name="main-error-handler-flow" doc:id="d829cd8f-87ce-4890-a523-e8b796f2513e" >
+		<ee:transform doc:name="hhtp status and error payload" doc:id="8fa582ce-07c7-4a70-926e-f2b355f22083" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+    "error": {
+        "code": vars.httpStatus,
+        "reason": error.errorType.identifier default 'APP:UNEXPECTED_ERROR',
+        "message": error.description default 'Not handled error',
+        "transaction": correlationId 
+	}
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+'400']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="5bbb1746-c368-42fc-a22c-237fdfdddc98" >
+			<cloudhub:create-notification domain="#[p('error.domain') ++ '-' ++ p('env')]" doc:name="Create Notification" doc:id="3329ab65-2454-4e97-ba52-bd99fccb2487" config-ref="CloudHub_Config_OAuth_Client_Credentials" priority="ERROR" >
+				<cloudhub:message ><![CDATA[#["Error Message:  " ++ payload.error.message]]]></cloudhub:message>
+				<cloudhub:custom-properties ><![CDATA[#[output application/java
+---
+{
+	"code": payload.error.code,
+    "reason": payload.error.reason,
+    "transaction": payload.error.transaction
+}]]]></cloudhub:custom-properties>
+			</cloudhub:create-notification>
+			<flow-ref doc:name="Log error in SF" doc:id="0371fe86-a6db-4d73-8a37-8ce10c7d7634" name="log-error-sf" />
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9d32a710-e2dc-41df-9dfd-192e95bbd2d6" >
+					<json-logger:logger doc:name="Error trying to raise a CH alert or loggin error in SF" doc:id="ffc00fde-ee48-4904-9992-d37db3c33fd9" config-ref="jsonLoggerConfig" message="Error trying to raise a CH alert or loggin error in SF" tracePoint="EXCEPTION" priority="ERROR" >
+						<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    error: error
+}]]]></json-logger:content>
+					</json-logger:logger>
+					<ee:transform doc:name="Add error logging flag" doc:id="14e445b0-b414-4478-89e1-c625f93ad305" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload ++ {"errorLogging": true}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<sub-flow name="log-error-sf" doc:id="04cac475-ebb9-45d4-a8c0-4313b6ab25b9" >
+		<ee:transform doc:name="To get log id" doc:id="d8bea75e-713f-4f64-87d5-d2e9ed428a9f" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="logInSF" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "transactionId": correlationId
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="POST" doc:name="POST /log  SFcore-sapi" doc:id="ce12b3c2-a9a9-43c3-b4e0-d279d3846b0c" config-ref="httpRequestSFCoreSapiConfig" path="/log" target="logResponse" >
+			<http:body ><![CDATA[#[vars.logInSF]]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('secure::error.sfcoresapi.client_secret'),
+	"client_id" : p('secure::error.sfcoresapi.client_id')
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="To log entry" doc:id="299c32bf-0d98-4493-9bf4-b9ed81173baf" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="logEntryInSF" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "transactionId": vars.logResponse.recordId,
+  "message": error.description,
+  "exceptionStackTrace": (error.cause.stackTrace map ((item, index) -> {stack: item.fileName ++ ' (line: ' ++ item.lineNumber ++')'})).stack joinBy  (', '),
+  "exceptionMessage": error.cause.message
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="POST" doc:name="POST /log-entry  SFcore-sapi" doc:id="4dbf8234-bb72-4134-9ab3-c311e3046e3a" config-ref="httpRequestSFCoreSapiConfig" path="/log-entry" target="logResponse" >
+			<http:body ><![CDATA[#[vars.logEntryInSF]]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('secure::error.sfcoresapi.client_secret'),
+	"client_id" : p('secure::error.sfcoresapi.client_id')
+}]]]></http:headers>
+		</http:request>
+	</sub-flow>
+
+</mule>

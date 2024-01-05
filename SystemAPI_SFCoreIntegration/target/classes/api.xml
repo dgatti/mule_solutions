@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+    <validation:config name="validationConfig" doc:name="Validation Config" doc:id="fc95c6e3-a8be-4424-a14c-2ff22206b39c" />
+    <flow name="vems-mule-sfcore-sapi-main">
+        <http:listener config-ref="apiHttpListenerConfig" path="/api/*" doc:id="29531202-e957-4b21-a233-b82ee2fe3f23">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="apiConfig" />
+        <error-handler ref="api-error-handler" />
+    </flow>
+    <flow name="post:\pnm-sync-data:application\json:apiConfig">
+        <set-variable value="#[attributes.queryParams.nocache?]" doc:name="nocache" doc:id="a16427e2-8467-4fe8-9a79-5181eaadd11a" variableName="nocache" />
+        <ee:transform doc:name="var composite" doc:id="f7d5584b-934c-4373-9f77-40b225a74035">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="composite"><![CDATA[attributes.queryParams.composite]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <choice doc:name="composite?" doc:id="fc314376-56e6-493d-8472-96811fea49f3">
+            <when expression="#[vars.composite == 'true']">
+                <flow-ref doc:name="pnm-composite-sync-data-flow" doc:id="28dfe792-3e62-4175-a8d0-489810e0d641" name="pnm-composite-sync-data-flow" />
+            </when>
+            <otherwise>
+                <flow-ref doc:name="pnm-sync-data-flow" doc:id="f03cf43e-96f4-45a7-b6dc-d301aed9ee68" name="pnm-sync-data-flow" />
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="post:\s3-document:application\json:apiConfig">
+        <flow-ref doc:name="Flow Reference" doc:id="0787b86d-aa1b-4c51-9043-0ee1aecb6591" name="main-s3-document-persist-event-flow" />
+    </flow>
+    <flow name="post:\va-contentions:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="de54ed98-a753-4750-970a-cdcebaf20c4a" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-persist-va-contentions-flow" doc:id="9c319b63-4199-455d-8e32-045530f96472" name="main-persist-va-contentions-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f0ffa66d-f512-4c9c-991f-823f6b9b35a0" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="7fbcbf1c-e999-41de-9568-7d7b41fa5726" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="e737bf4f-a4c2-4c86-b52e-5586ca57130a">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\va-dbq:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="9cd90f8c-a3cd-48c1-8fb9-190fc93747bf" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-persist-dbq-flow" doc:id="c3e8a6c5-e63f-4e57-9bbd-c88ff7ae38fb" name="main-persist-dbq-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5d9dedfc-9e84-49de-9f3d-f0710ea2fbe6" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="5270fd32-417b-4003-a6ce-986da497e380" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="7d421264-c970-4bbf-920d-7684d76e9067">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\va-inbound-esr:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="f398a45c-928f-4775-bd91-18ee07deabdc" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-persist-va-esr-flow" doc:id="5801be6f-e211-450f-8b7f-06dd207f8ffc" name="main-persist-va-esr-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4ab80eae-18cf-410e-80d8-172e1b43d624" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="24f2f062-4c9c-4d44-9546-4d3ca09cf304" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="6a861712-8a1e-4a2c-9442-4668e19333c1">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\va-period-of-service:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="f786dbed-2f3e-47cd-8542-9974bc0e9b1b" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-persist-dbq-flow" doc:id="ea5a99fc-f7ba-4979-ac9c-10176ccc44b9" name="main-persist-period-of-service-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fa830003-f348-444c-86cf-e1075f4e6496" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="88812538-4104-4a2e-b2e5-8a50f4f200e4" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="6e15d6f9-a8a7-4313-b78f-3d01d2069a87">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\s3-document:apiConfig">
+        <flow-ref doc:name="Flow Reference" doc:id="c491dbca-c824-49ac-ac7f-a477a10f4218" name="main-query-document-data-s3-flow" />
+    </flow>
+    <flow name="get:\content-version-s3:apiConfig">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="contentVersionId"><![CDATA[attributes.queryParams.'contentVersionId']]></ee:set-variable>
+                <ee:set-variable variableName="contentDocumentId"><![CDATA[attributes.queryParams.'contentDocumentId']]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="38cb103b-21a2-4451-b0dd-0d0a813a34fb" name="main-query-document-version-data-flow" />
+    </flow>
+    <flow name="put:\s3-document:application\json:apiConfig">
+        <flow-ref doc:name="Flow Reference" doc:id="18c53522-95a5-4b83-8f40-4de040971dcd" name="main-update-s3-document-custom-object-flow" />
+    </flow>
+    <flow name="get:\content-version:apiConfig">
+        <set-variable value="#[message.attributes.queryParams.'title' default null]" doc:name="Set Parameter" doc:id="785b16ff-8b5f-46b1-860a-c9365778ca45" variableName="title" />
+        <set-variable value="#[message.attributes.queryParams.'contentBodyId' default null]" doc:name="Set contentBodyId" doc:id="7f1dd3b2-78ed-4d1d-94da-a1aaae759855" variableName="contentBodyId" />
+        <flow-ref doc:name="main-query-content-version-object-by-param-flow" doc:id="b6b269a7-e9f4-4013-8244-193219a8b57c" name="main-query-content-version-object-by-param-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="afa8415e-a4b0-4e89-a462-ab82ee142004" type="ANY">
+                <set-variable value="500" doc:name="Set Variable" doc:id="6bf9623d-e90d-4a19-8265-30971bf942e3" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="092c5d5d-65df-4eaa-ba0b-5f18ee487698">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "INTERNAL_SERVER_ERROR",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\content-document-link:apiConfig">
+        <set-variable value="#[message.attributes.queryParams.'linkedEntityId']" doc:name="Set Parameter" doc:id="534a5f83-3def-4333-a61f-ec01caa2d98f" variableName="linkedEntityId" />
+        <flow-ref doc:name="main-query-content-document-link-object-by-param-flow" doc:id="863887fd-f528-419d-99ad-c93baaae62c0" name="main-query-content-document-link-object-by-param-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="99fab003-af82-4a6c-a54a-e1554e36306b" type="ANY">
+                <set-variable value="500" doc:name="Set Variable" doc:id="3741b617-2211-421c-8528-18b78d871c9e" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="db11a098-5f43-453a-a158-b307dd88c108">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "INTERNAL_SERVER_ERROR",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\schema-master:apiConfig">
+        <set-variable value="#[message.attributes.queryParams.'versionNumber']" doc:name="Set Parameter" doc:id="53e0fcb3-17f5-4776-bce5-fd23e5dbff69" variableName="versionNumber" />
+        <flow-ref doc:name="main-query-schema-master-object-by-param-flow" doc:id="fc70783e-4483-4c54-8b24-4c8e115c1998" name="main-query-schema-master-object-by-param-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="bfd17be6-2641-42bb-82cf-1eafaf1a2181" type="ANY">
+                <set-variable value="500" doc:name="Set Variable" doc:id="b4390a44-b327-43c4-8d7d-2d05fed981a6" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="6b10cf63-5f54-4d55-8aed-153774d5d3f3">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "INTERNAL_SERVER_ERROR",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\accounts-payable:apiConfig">
+        <ee:transform doc:name="Transform Message" doc:id="c035aa7b-9fa2-4c33-942f-31611543d8fa">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="status"><![CDATA[attributes.queryParams.status]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="e9dfd008-fcd4-4c52-9d4e-91d7e95c1d77" name="main-query-payment" />
+    </flow>
+    <flow name="get:\accounts-receivables:apiConfig">
+        <ee:transform doc:name="Transform Message" doc:id="7744ae0b-0add-4e68-b2f4-3cb8886d0446">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="status"><![CDATA[attributes.queryParams.status]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="f158e6ac-88db-4ea4-b587-4db8054bff30" name="main-query-billing" />
+    </flow>
+    <flow name="post:\log:application\json:apiConfig">
+        <flow-ref doc:name="main-log-flow" doc:id="a692a57c-2e24-4ecc-b2f9-49f199ac607a" name="main-log-flow" />
+    </flow>
+    <flow name="post:\log-entry:application\json:apiConfig">
+        <flow-ref doc:name="main-logentry-flow" doc:id="a5a9e5d3-ce5d-4940-98bf-5149d72c0cf5" name="main-logentry-flow" />
+    </flow>
+    <flow name="get:\cenl-notification:apiConfig">
+        <flow-ref doc:name="get-cenl-notification-main-flow" doc:id="28273dd8-6794-4be1-a075-ddee79a8f1ac" name="get-cenl-notification-main-flow" />
+    </flow>
+    <flow name="put:\cenl-notification:application\json:apiConfig">
+        <flow-ref doc:name="put-cenl-notification-main-flow" doc:id="d8af7b2f-1987-42a2-a76e-73facb1b406b" name="put-cenl-notification-main-flow" />
+    </flow>
+    <flow name="post:\va-medical-opinion:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="be767a6d-82c6-4a51-938f-0233ba142248" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-persist-va-esr-flow" doc:id="ffd81501-27c3-4553-821f-31b8650e3722" name="main-persist-va-medical-opinion-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5591707a-2455-433c-97da-691cafd23f1f" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="d5c013b8-ffd0-437d-b8c8-6a798f234dc6" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="1e3b1474-5f1c-4f38-92eb-193ba205bde9">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\case-mera-update:application\json:apiConfig">
+        <flow-ref doc:name="main-mera-update-notification-inCase" doc:id="215d2619-f246-4c98-892e-4b893d182f18" name="main-mera-update-notification-inCase" />
+    </flow>
+    <flow name="get:\case-mera-update\caseid:apiConfig">
+        <ee:transform doc:name="caseId queryParam">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="caseNumber"><![CDATA[attributes.queryParams.caseNumber]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="7b135756-4ed5-4b99-8c4b-d71e48683c1e" name="main-mera-recovery-id-fromCase" />
+    </flow>
+    <flow name="get:\case-mera-update:apiConfig">
+        <flow-ref doc:name="main-mera-update-metadata-fromCase" doc:id="5aa044f8-998e-49f4-9b3c-8297262ddb57" name="main-mera-recovery-metadata-fromCase" />
+    </flow>
+    <flow name="get:\content-version-by-s3Id:apiConfig">
+        <set-variable value="#[message.attributes.queryParams.'linkedEntityId']" doc:name="Set Parameter" doc:id="3ff77298-db65-406f-8ef2-a2b0352f33dd" variableName="linkedEntityId" />
+        <flow-ref doc:name="content-version-by-s3Id-main-flow" doc:id="c3e7c66b-7310-4987-9d6f-48cd42884728" name="content-version-by-s3Id-main-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c8feea33-a98a-4113-9745-7ea44a87a45b" type="ANY">
+                <set-variable value="500" doc:name="Set Variable" doc:id="2a05ef15-f4e2-449e-a8b6-0af9e6cea73c" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="7c8f53e0-ea75-4a3e-b049-9bda790a856b">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "INTERNAL_SERVER_ERROR",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\accounts-payable:application\json:apiConfig">
+        <ee:transform doc:name="queryParams-Id">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="Id"><![CDATA[attributes.queryParams.nameId]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="accounts-payable-update-put" doc:id="8852cfa9-dfd3-47d9-9260-b1a92b837819" name="accounts-payable-update-put" />
+    </flow>
+    <flow name="put:\accounts-receivables:application\json:apiConfig">
+        <ee:transform doc:name="queryParams-Id" doc:id="114664a4-db3d-419c-9fb7-0dcb1e401938">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="invoiceId"><![CDATA[attributes.queryParams.invoiceId]]></ee:set-variable>
+                <ee:set-variable variableName="lineNumber"><![CDATA[attributes.queryParams.lineNumber]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="accounts-receivables-update-put" doc:id="9afe54f2-7031-4dc2-95b9-e97d359d81fb" name="accounts-receivables-update-put" />
+    </flow>
+    <flow name="get:\case-metadata:apiConfig">
+        <flow-ref doc:name="main-mera-update-metadata-fromCase" doc:id="d0a0b172-f1b7-462b-837d-6c7c76d1dcd2" name="main-mera-recovery-metadata-fromCase" />
+    </flow>
+    <flow name="get:\ves-dbq-contention:apiConfig">
+        <flow-ref doc:name="main-query-ves-dbq-contention-by-flag-report-flow" doc:id="f8718901-ec5b-4619-ba0b-be1deda93e87" name="main-query-ves-dbq-contention-by-flag-report-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3404145a-7b89-4e4b-8365-9f3ef015530f" type="ANY">
+                <set-variable value="500" doc:name="Set Variable" doc:id="8a73406f-5200-47f2-b009-b761ac6b7a06" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="79232ed9-f1c9-4bc8-a0c3-d93cec4176c5">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "INTERNAL_SERVER_ERROR",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\s3-document\dbq-form:apiConfig">
+        <set-variable value="#[message.attributes.queryParams.reportReady default '']" doc:name="Set reportReady" doc:id="02805beb-634e-4523-80ed-a1197853b745" variableName="reportReady" />
+        <flow-ref doc:name="main-query-s3-document-by-flag-report-flow" doc:id="d1657c2e-026a-45bd-9208-d29576289037" name="main-query-s3-document-by-flag-report-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d2a9694f-b068-4379-b763-617ee7b64fb9" type="ANY">
+                <set-variable value="500" doc:name="Set Variable" doc:id="5bc330c8-ae94-4365-ab05-ea9f7d37d5f1" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="b8f13185-68e5-481f-bead-7a7b49db3174">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "INTERNAL_SERVER_ERROR",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="patch:\ves-dbq-form:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="1ad9eafb-06f1-4e1f-a384-ca2a9d906b71" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-patch-dbq-form-object-flow" doc:id="dd2d80c7-fc19-42f5-8615-acc5d8656f05" name="main-patch-dbq-form-object-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f4289406-4add-4afb-9a73-a59c8d1d5274" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set httpStatus" doc:id="93ca1a38-7db9-4d03-ac52-8886f19d3e45" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="0b4912a3-d7dc-4504-adf0-6ebb1d29da95">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="patch:\case-metadata:application\json:apiConfig">
+        <flow-ref doc:name="main-mera-update-notification-inCase" doc:id="57610b37-246b-4844-ab17-b0987f5e5390" name="main-mera-update-notification-inCase" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2f3b656e-159b-41db-aa0e-a12bf8942860" type="ANY">
+                <set-variable value="500" doc:name="Set Variable" doc:id="21385e38-0a4c-41df-ae74-15d34c309e85" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="1287b707-89f3-450f-851c-35ccc586ff66">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "INTERNAL_SERVER_ERROR",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\case-metadata\(caseNumber):apiConfig">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="caseNumber">attributes.uriParams.'caseNumber'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="6d7b09b7-523e-4e0b-90c1-94bcab2198c7" name="main-mera-recovery-id-fromCase" />
+    </flow>
+    <flow name="get:\content-version\(id):apiConfig">
+        <set-variable value="#[attributes.uriParams.'id']" doc:name="Set Id" doc:id="a8314c7e-5414-4899-b5f0-ed93439b5563" variableName="id" />
+        <flow-ref doc:name="query-content-version-by-id-flow" doc:id="c86cf3db-6acb-4bd0-b322-3f8be975a16e" name="query-content-version-by-id-flow" />
+    </flow>
+    <flow name="post:\content-version:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="77624b89-2ce7-436d-82d1-f0284a8869d4" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-create-content-version-flow" doc:id="b94b2ae6-cb4f-4c34-ab26-b901518ffc86" name="main-create-content-version-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="04cce6b6-7ad8-47a0-bb95-bde7a20cc63c" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="198aaa5f-a984-47da-a138-59f5f1af0183" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="a6c5a775-359b-4a00-abd8-cb24bdf2ce0b">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\account:apiConfig">
+        <set-variable value="#[message.attributes.queryParams.externalId default null]" doc:name="Set externalId" doc:id="a5e7b73a-4362-4238-be93-19c45febdad3" variableName="externalId" />
+        <flow-ref doc:name="main-query-account-by-external-id-flow" doc:id="d9ac4891-fca0-43c7-888f-a843e6c32388" name="main-query-account-by-external-id-flow" />
+    </flow>
+    <flow name="post:\content-document-link:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="7c9953e2-aa47-4c0a-8bd8-01a90d0e9e86" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-create-content-document-link-flow" doc:id="4a4bcd3b-ff27-4e9d-bcc3-64dce077601f" name="main-create-content-document-link-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1404eb55-935a-460d-b0d1-6cdb70949ac0" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="127e0343-851a-41e6-8b24-9d61c25bc383" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="6588f60d-e550-48bb-af27-1522f71c4a87">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "BAD_REQUEST",
+	errorMessage: error.description,
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\cases\readyToReport:apiConfig">
+        <flow-ref doc:name="Cases Ready To Report" doc:id="eea7246e-a576-4718-9889-a0e3beb856a5" name="main-cases-ready-report" />
+    </flow>
+    <flow name="patch:\cases\dbqUploaded:apiConfig">
+        <flow-ref doc:name="DBQ uploaded confirmation" doc:id="682e327b-4b4d-41d2-9083-a8ef91b50b02" name="main-dbq-uploaded" />
+    </flow>
+    <flow name="get:\ves-doc-references-contention:apiConfig">
+        <set-variable value="#[attributes.queryParams.contentionId]" doc:name="contentionId" doc:id="ba94101d-2de0-4d29-98b2-4637a4060c9c" variableName="contentionId" />
+        <flow-ref doc:name="Doc references" doc:id="b6ab8734-d398-4ac4-a84c-75f212db1a79" name="get-doc-references" />
+    </flow>
+    <flow name="patch:\ves-dbq-contention:application\json:apiConfig">
+        <flow-ref doc:name="Update ves contentions" doc:id="41d196de-bfc6-4849-ad88-e691048e76a7" name="update-ves-contentions" />
+    </flow>
+    <flow name="patch:\ves-esr:application\json:apiConfig">
+        <validation:is-true doc:name="Payload is not empty" doc:id="412a7a98-8e8c-4580-80d4-76e5f6164cb7" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+        <flow-ref doc:name="main-patch-ves-esr-by-id-flow" doc:id="c4b5fe8f-1b02-4640-8648-a9bcb7692688" name="main-patch-ves-esr-by-id-flow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ea4a1d67-cd24-438b-bc3b-4211be6649c6" type="VALIDATION:INVALID_BOOLEAN">
+                <set-variable value="400" doc:name="Set Variable" doc:id="3a696a20-a33f-457e-b763-480e5a791437" variableName="httpStatus" />
+                <ee:transform doc:name="Transform Message" doc:id="73a7bb7c-9b37-4766-99fc-7a9347e7120d">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+                            output application/json
+                            ---
+                            {
+                                errorCode: "BAD_REQUEST",
+                                errorMessage: error.description,
+                                transactionId: correlationId,
+                                timeStamp: now()
+                            }]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\va-esr\(esr_id):apiConfig">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="esr_id">attributes.uriParams.'esr_id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="main-query-ves-esr-by-id-flow" doc:id="1186b936-dd20-4d66-8d04-749c4718253d" name="main-query-ves-esr-by-id-flow" />
+    </flow>
+    <flow name="post:\outbound-event:application\json:apiConfig" doc:id="5827600d-b77a-48cc-901e-bc67772f1c67">
+        <flow-ref doc:name="Flow Reference" doc:id="7cf513a1-8394-44ce-ba65-df1ced937866" name="main-post-outboundEvent" />
+    </flow>
+    <flow name="get:\outbound-event:apiConfig" doc:id="303cf14b-98f8-46ff-a286-c130a4a660e5">
+        <flow-ref doc:name="Flow Reference" doc:id="9180c2f1-94bb-4dcf-a9d9-4a6bc19dbe32" name="main-query-outboundEvent" />
+    </flow>
+    <flow name="patch:\outbound-event:application\json:apiConfig">
+        <flow-ref doc:name="Flow Reference" doc:id="52446efe-77ff-493f-a18a-fca73e5b4a59" name="main-update-status-OutboundEvent" />
+    </flow>
+    <flow name="patch:\cenl-notification\service-appointment:application\json:apiConfig">
+		<validation:is-true doc:name="Payload is not empty" doc:id="13a68da9-4ce2-468d-b4a8-4e8c4864cd4e" config-ref="validationConfig" expression="#[sizeOf(payload) &gt; 0]" message="Invalid payload" />
+		<flow-ref doc:name="main-update-notification-by-id-flow" doc:id="0a94c424-1bc4-468c-b913-0a9ad26b0973" name="main-update-notification-by-id-flow" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b1251fb2-31b8-49e6-b3af-8dd3e66ac57a" type="VALIDATION:INVALID_BOOLEAN" >
+				<set-variable value="400" doc:name="Set Variable" doc:id="13e38142-81df-42a5-8f1b-7d3b599184d6" variableName="httpStatus" />
+				<ee:transform doc:name="Transform Message" doc:id="824381da-e999-4414-bb13-af79e28ded65" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+                            output application/json
+                            ---
+                            {
+                                errorCode: "BAD_REQUEST",
+                                errorMessage: error.description,
+                                transactionId: correlationId,
+                                timeStamp: now()
+                            }]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="get:\cenl-notification\service-appointment:apiConfig">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.caseNumber]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<flow-ref doc:name="main-query-notification-by-casenumber-flow" doc:id="8dd4c5c9-3ee7-472d-8ce7-7d6f44a5daeb" name="main-query-notification-by-casenumber-flow"/>
+    </flow>
+	<flow name="get:\case-metadata\(esrId)::apiConfig" doc:id="48f5f6ca-5364-4111-ae53-dc756b12035e" >
+		<ee:transform doc:name="Transform Message" doc:id="a2d69db8-ea09-46f5-82c7-ea8dce6389d8" >
+			<ee:variables >
+				<ee:set-variable variableName="esrId" ><![CDATA[attributes.uriParams.'esrId']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="c6a1b6f5-13c9-4b59-96e8-569c3fa80cf1" name="main-query-caseNumber"/>
+	</flow>
+</mule>

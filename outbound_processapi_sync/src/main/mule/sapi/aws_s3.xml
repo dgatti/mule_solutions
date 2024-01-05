@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="post-xml-event-to-aws-sapi-flow" doc:id="bd6ce527-70bd-46e4-99bf-b7dcc5f483ba" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="8887f666-bd24-4ef4-884b-4feb01f6bd18" name="set-request-sapi-headers-client-id-client-secret" />
+		<json-logger:logger doc:name="Logger S3 POST" doc:id="04e13987-09b0-43e6-8185-02d431d75867" config-ref="jsonLoggerConfig" message="UPLOAD A NEW S3 OBJECT" tracePoint="BEFORE_REQUEST">
+		</json-logger:logger>
+		<http:request method="POST" doc:name="request-post-xml-event-to-vems-mule-aws-sapi" doc:id="e02f9bcd-3249-432d-8eb6-7a79bbae2ecb" config-ref="httpRequestS3SapiConfig" path="${app.s3.api.methods.postObject}" outputMimeType="application/xml" >
+			<http:body ><![CDATA[#[%dw 2.0
+
+var uniqueFileName = vars.esrID default '' ++ ".xml" as String
+
+output multipart/form-data
+---
+{
+    parts: {
+        file: {
+            headers : {
+                            "Content-Disposition": {
+                            	"name": "file",
+                            	"filename": uniqueFileName
+                            }
+            },
+			content: payload.^raw
+        }
+    }
+}]]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="get-xml-event-s3-to-aws-sapi-flow" doc:id="a52c715a-9be3-48e3-823f-bbb1c61c2679" >
+		<flow-ref doc:name="set-request-sapi-headers-client-id-client-secret" doc:id="3410d400-0b74-4ca1-8a1c-56c8cef171d9" name="set-request-sapi-headers-client-id-client-secret" />
+		<http:request method="GET" doc:name="request-post-xml-event-to-vems-mule-aws-sapi" doc:id="a2fc9b25-db2b-406e-af7e-3c6c46287212" config-ref="httpRequestS3SapiConfig" path="${app.s3.api.methods.getObject}" responseTimeout="10000">
+			<reconnect count="4" />
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"key" : vars.s3KeyObject
+}]]]></http:query-params>
+		</http:request>
+		<set-variable value="#[attributes.headers]" doc:name="Set Variable" doc:id="9be594f8-532f-4adb-9c91-cc7cbf2abd6d" variableName="outboundHeaders"/>
+	</flow>
+</mule>

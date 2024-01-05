@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:error-handler-plugin="http://www.mulesoft.org/schema/mule/error-handler-plugin" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:module-error-handler-plugin="http://www.mulesoft.org/schema/mule/module-error-handler-plugin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/error-handler-plugin http://www.mulesoft.org/schema/mule/error-handler-plugin/current/mule-error-handler-plugin.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd http://www.mulesoft.org/schema/mule/module-error-handler-plugin http://www.mulesoft.org/schema/mule/module-error-handler-plugin/current/mule-module-error-handler-plugin.xsd">
+    <flow name="api-template-main">
+        <http:listener config-ref="apiHttpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="apiConfig" />
+        <error-handler ref="api-error-handler" />
+    </flow>
+    <flow name="post:\outbound-event:application\json:apiConfig">
+        <flow-ref doc:name="salesforce-core-appointment-completed-listener-flow" doc:id="a7fb569d-1a44-4fb8-82bc-0eb8644b4812" name="salesforce-core-appointment-scheduled-listener-flow" />
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  code: "ACCEPTED_NOT_COMPLETE",
+  message: "Success"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\upload-relate-file:apiConfig">
+        <ee:transform doc:name="Get Id to Relate with" doc:id="ced274c9-6115-4a83-a86d-25b236d7f9d2">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="esrID"><![CDATA[attributes.queryParams."relateToId"]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="main-upload-object-to-s3-and-create-s3document-flow" doc:id="7a2b3cdd-8f27-4b6c-b92a-0094ee918b97" name="main-upload-object-to-s3-and-create-s3document-flow" />
+    </flow>
+	<flow name="post:\process\trigger:application\json:apiConfig" doc:id="5b7d4a0a-d2e2-4a87-aac0-b8aea21ebef6" >
+		<ee:transform doc:name="set thisDay" doc:id="0a08d565-241c-4006-a951-f5efa9c02782">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="startDate"><![CDATA[%dw 2.0
+output application/json
+---
+payload.startDate as String {format: "y/MM/dd"}]]></ee:set-variable>
+				<ee:set-variable variableName="endDate"><![CDATA[%dw 2.0
+output application/json
+---
+payload.endDate as String {format: "y/MM/dd"}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="startOESyncSubflow" doc:id="41b7dfe4-1235-42bb-8ee9-f8f2496da83c" name="main-foreach-process-outbound-event-flow" />
+	</flow>
+</mule>

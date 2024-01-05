@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ExamManagementEventNotification>
+	<schemaLocation>http://va.gov/vler/schemas/vlerSupersetSchema/examManagement/4.3 ../../../../XMLschemas/exchange/ExamManagement-4.3.xsd</schemaLocation>
+	<OriginatingSystem>
+		<participatingSystemName>VBA Contractor</participatingSystemName>
+		<contractorName>VES</contractorName>
+	</OriginatingSystem>
+	<Destination>
+		<participatingSystemName>VBMS</participatingSystemName>
+	</Destination>
+	<ClarificationRequestEvent>
+		<eventUuid>0ba506ad-f6bb-41f8-9f9b-8a4fced6fc0a</eventUuid>
+		<previousEventUuid>9da2cd67-bccd-4ad6-8cd0-3935c00074e1</previousEventUuid>
+		<eventDtg>2022-11-08 08:25:35</eventDtg>
+		<examSchedulingRequestUuid>f0f99c8f-ad12-4208-8a1f-1848811bb7f9</examSchedulingRequestUuid>
+		<dateOfRequest>2023-07-21 00:00:00</dateOfRequest>
+		<pointOfContactName>VES Clarification</pointOfContactName>
+		<modelVersion>4.0</modelVersion>
+		<EventSource>
+			<participatingSystemName>VBA Contractor</participatingSystemName>
+			<contractorName>VES</contractorName>
+		</EventSource>
+		<ClarificationReason>1016 sent with 1017 </ClarificationReason>
+		<PointOfContactPhone>
+			<primaryPhone>8323333620</primaryPhone>
+		</PointOfContactPhone>
+		<UnclearContentionReferences>
+			<ContentionClarificationRequest>
+				<contentionUuid/>
+				<ContentionClarificationFreeText/>
+			</ContentionClarificationRequest>
+		</UnclearContentionReferences>
+	</ClarificationRequestEvent>
+</ExamManagementEventNotification>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<http:request-config name="pocHTTPConfiguration" doc:name="HTTP Request configuration" doc:id="6dd5f6fa-77c9-4bfa-b403-fc33071fdf1a" responseTimeout="20000" >
+		<http:request-connection protocol="HTTPS" host="internal-vems-uat-inbound.lb-gprod-rt.anypointdns.net" port="443" >
+			<tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+		</http:request-connection>
+	</http:request-config>
+	<flow name="testFlow" doc:id="a86b0741-24e3-4441-bb7c-2ffdd843c380" >
+		<http:listener doc:name="Listener" doc:id="841b89b8-78ba-4f14-b892-7b83bb84cebc" config-ref="apiHttpListenerConfig" path="/test"/>
+		<http:request method="GET" doc:name="Request Test" doc:id="6e2e16f6-9f55-43e8-b48d-ad707f3af9bc" config-ref="pocHTTPConfiguration" path="/poc-dlb" correlationId="#[correlationId]"/>
+	</flow>
+</mule>

@@ -1,0 +1,8 @@
+https:
+  keyPass: "![LMwU9lU49ETVhX81ziCo4w==]"
+
+app:        
+  s3:
+    credentials:
+      client_id:     "![0w7y0Dhhd0aP4wpqdMH6PsubfkTVMKALLYKBCt8QBI8Jpg8yMHvBgg==]"
+      client_secret: "![j4TybN8N5EUNyJNMIiiEmI+EDuYUqIoen8xn8c7qPfvyKk3K9GUEPQ==]"

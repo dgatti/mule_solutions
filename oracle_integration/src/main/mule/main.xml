@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+
+	
+	<sub-flow name="put-supplier-addresses-mainFlow" doc:id="f5d153e7-c3e1-4d08-9664-67ac5fd11fc3" >
+		<try doc:name="Try" doc:id="c7c46133-03d8-474b-8c23-e4396837a059" >
+			<http:request method="PATCH" doc:name="PUT: /suppliers/{supplierId}/child/addresses/{addressId}" doc:id="275d18f4-f893-44c5-b8cc-93b90e866beb" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}/child/addresses/{addressId}" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId,
+	"addressId" : vars.addressId
+}]]]></http:uri-params>
+			</http:request>
+			<error-handler ref="api-error-handler" />
+		</try>
+		<ee:transform doc:name="map response" doc:id="7af0ccc3-8c74-4a46-90eb-761d820b9925" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="get-supplier-addresses-mainFlow" doc:id="6d0c9d48-03dc-48a5-acb3-8ec34c33daeb" >
+		<try doc:name="Try" doc:id="56acd125-f652-4166-ab84-58aef720ca70" >
+			<http:request method="GET" doc:name="GET: /suppliers/{supplierId}/child/addresses/{addressId}" doc:id="cf97459a-9e8c-4c78-b75a-2eeb0c44e65d" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}/child/addresses/{addressId}" >
+				<http:body ><![CDATA[#[vars.none]]]></http:body>
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId,
+	"addressId" : vars.addressId
+}]]]></http:uri-params>
+			</http:request>
+			
+		</try>
+		<ee:transform doc:name="map response" doc:id="946a0f63-ced9-49e2-976d-bf6a3020a266" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="post-supplier-addresses-mainFlow" doc:id="0786417a-ff00-45f7-ad3a-523c2660f750" >
+		<try doc:name="Try" doc:id="1ab939e8-58d0-4920-90d4-e1f6dcd9adb3" >
+			<http:request method="POST" doc:name="POST: /suppliers/{supplierId}/child/addresses" doc:id="df4bcdc4-28c3-4308-b71e-d0ca81358c74" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}/child/addresses">
+				<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId
+}]]]></http:uri-params>
+			</http:request>
+			
+		</try>
+		<ee:transform doc:name="map response" doc:id="cad83ad8-2049-47a8-b7cd-5d4a5c42f07e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="post-supplier-mainFlow" doc:id="8a5dabe9-00f5-42c2-b90e-5610072838cd">
+		<try doc:name="Try" doc:id="4aea10bb-9ea1-441f-a6fe-3db0b18700ea">
+			<http:request method="POST" doc:name="POST: /suppliers" doc:id="3bcf14b3-0fbf-483a-ade1-d80b1d18cce2" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers">
+		</http:request>
+			
+		</try>
+		<ee:transform doc:name="map response" doc:id="ac55d046-57a8-44e8-b206-58b622ed01ed">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="get-supplier-mainFlow" doc:id="1b07ff49-256c-492c-b3f3-4b4f0bdcb54d">
+		<try doc:name="Try" doc:id="00a4c028-e739-4306-b995-43fe3f3930fd">
+			<http:request method="GET" doc:name="GET: /suppliers/{supplierId}" doc:id="daedc8e5-c784-4dbf-8325-dc2f676a0026" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}">
+			<http:body><![CDATA[#[vars.none]]]></http:body>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId
+}]]]></http:uri-params>
+			<http:query-params><![CDATA[#[vars.queryParams]]]></http:query-params>
+		</http:request>
+			
+		</try>
+		<ee:transform doc:name="map response" doc:id="fd4894e0-a79d-41a2-a351-abe6c7d61537">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="put-supplier-mainFlow" doc:id="0151c983-8963-4f94-b26e-3a93a7afc340">
+		<try doc:name="Try" doc:id="b06fa1cd-ae21-4ea4-adda-09a37b565f28">
+			<http:request method="PATCH" doc:name="PATCH: /suppliers/{supplierId}" doc:id="55f5287e-f225-418b-97dd-2209f589e008" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}">
+				<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId
+}]]]></http:uri-params>
+			</http:request>
+			
+		</try>
+		<ee:transform doc:name="map response" doc:id="508e514d-5bd9-44a3-8bce-6bc3e7682215">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="get-externalBankAccount-mainFlow" doc:id="4befbac3-7569-41cd-bd24-f6858d339715">
+		<try doc:name="Try" doc:id="bc7aa7cb-7172-40bc-b880-ded0e956b8fe" >
+			<http:request method="GET" doc:name="GET: /externalBankAccounts/{bankAccountId}" doc:id="15acc7ce-a9c6-4f17-8f12-a12a4b36aa63" config-ref="HTTP_Request_configuration_oracleApi" path="/externalBankAccounts/{BankAccountId}" >
+				<http:body ><![CDATA[#[vars.none]]]></http:body>
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"BankAccountId" : vars.BankAccountId
+}]]]></http:uri-params>
+			</http:request>
+			
+		</try>
+		<ee:transform doc:name="map response" doc:id="d9ed5815-abe4-4326-854a-d0e858f2aecb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="put-supplier-contact-mainFlow" doc:id="c6a15da8-0b15-49ee-9d28-75c42c84ebf2" >
+		<try doc:name="Try" doc:id="fa28e9f7-fb89-46f7-98c5-90d173ffa764" >
+			<http:request method="PATCH" doc:name="PUT: /suppliers/{supplierId}/child/addresses/{addressId}" doc:id="77d25ad2-0395-4df2-bef4-be7151cdf815" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}/child/contacts/{contactId}" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId,
+	"contactId" : vars.contactId
+}]]]></http:uri-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="7e2a8715-16fb-4cd7-8dab-e9d271964180" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="post-supplier-sites-mainFlow" doc:id="b6b22c69-c9b4-42a5-bf3d-2c742d8716ac" >
+		<try doc:name="Try" doc:id="4fc8d7db-914d-4267-b1ef-a5696985f471" >
+			<http:request method="POST" doc:name="POST: /suppliers/{supplierId}/child/sites" doc:id="7d8672f6-c906-4471-bde7-d752fa18a7d8" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}/child/sites">
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId
+}]]]></http:uri-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="ccc830c8-6956-45ad-81f1-c2b173c74e65" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="put-supplier-sites-mainFlow" doc:id="5f4610f2-e002-419d-b2c0-d4a5318fe795" >
+		<try doc:name="Try" doc:id="b40b35c2-7ba5-4b3e-8112-91eccabb3402" >
+			<http:request method="PATCH" doc:name="PATCH: /suppliers/{supplierId}/child/sites/{siteId}" doc:id="47b68c00-b720-4bc8-b48e-eea14253a81c" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}/child/sites/{siteId}">
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId,
+	"siteId" : vars.siteId
+}]]]></http:uri-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="ef275066-4b0a-469a-bbfd-db76c0e65ec0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="get-external-payee-mainFlow" doc:id="33c6601b-dcd6-499a-9d51-52bf72ef826e" >
+		<try doc:name="Try" doc:id="2dff4e16-c864-4f44-a9ed-5685c5b20386" >
+			<http:request method="GET" doc:name="GET: /paymentsExternalPayees" doc:id="ecf46fd3-8727-4fdc-b7f0-3c37adf42dd6" config-ref="HTTP_Request_configuration_oracleApi" path="/paymentsExternalPayees" >
+				<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"finder": 'ExternalPayeeSearch;PayeePartyIdentifier=' ++ (vars.supplierPartyId default '') ++ ',SupplierSiteIdentifier=' ++ (vars.supplierSiteId default '') ++ ',Intent=Supplier',
+	"expand" : p('app.oracle.api.externalPayee.expandValue')
+}]]]></http:query-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="726688bd-fa37-47d2-a428-c9ec256dce5f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="get-bank-information-mainFlow" doc:id="1a9f0c2e-4ad2-4241-b390-9089e95b1128" >
+		<choice doc:name="Get by iban" doc:id="f435e6ee-573b-430c-92aa-09696d09695c" >
+			<when expression="#[!isEmpty(vars.iban)]">
+				<try doc:name="Try" doc:id="591c3ebe-441c-464d-9593-a791d6cde88a">
+			<http:request method="GET" doc:name="GET: /cashBankBranches" doc:id="f0b6b7b3-51a9-46b0-95a5-e278f1c95a50" config-ref="HTTP_Request_configuration_oracleApi" path="/cashBankBranches">
+				<http:query-params><![CDATA[#[output application/java
+---
+{
+	"q": 'EFTSWIFTCode=' ++ (vars.iban default '')
+}]]]></http:query-params>
+			</http:request>
+		</try>
+			</when>
+			<otherwise >
+				<try doc:name="Try" doc:id="d6bae9ff-7545-406a-844e-d7747d52b660" >
+					<http:request method="GET" doc:name="GET: /cashBankBranches" doc:id="ea5da913-a5e9-418b-bb0e-c9db30785fd2" config-ref="HTTP_Request_configuration_oracleApi" path="/cashBankBranches" >
+						<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"q": 'BranchNumber=' ++ (vars.routingNumber default '')
+}]]]></http:query-params>
+					</http:request>
+				</try>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="map response" doc:id="c6522fd5-8167-4752-9085-03798d2c2189" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="post-payment-method-mainFlow" doc:id="9c2ed94b-1c4d-4c01-979e-ca2b21cca0dc" >
+		<try doc:name="Try" doc:id="3a68a6bc-84eb-40c1-bad0-0cae0c4abe16" >
+			<http:request method="POST" doc:name="POST: /paymentsExternalPayees/{payeeId}/child/externalPartyPaymentMethods" doc:id="fb96cc75-113f-42c8-9605-a78c3da595de" config-ref="HTTP_Request_configuration_oracleApi" path="/paymentsExternalPayees/{payeeId}/child/externalPartyPaymentMethods" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"payeeId" : vars.payeeId
+}]]]></http:uri-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="f73108ad-447a-40e3-88b7-653bbfbaa23f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="post-external-bank-account-mainFlow" doc:id="2fc15912-8508-4a37-9408-9d12a7ac65bb" >
+		<try doc:name="Try" doc:id="efe50682-2102-49d6-8fc9-d0e77caf57ac" >
+			<http:request method="POST" doc:name="POST: /externalBankAccounts" doc:id="b2d3715c-09ab-4a30-ba19-ad9cab2882eb" config-ref="HTTP_Request_configuration_oracleApi" path="/externalBankAccounts" >
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="c5ce6736-1af6-48e1-acf2-46acd9193f98" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="patch-external-bank-account-mainFlow" doc:id="05b0d752-1d36-48b0-959b-c9376b5de89a" >
+		<try doc:name="Try" doc:id="c6c95870-a96f-45dd-979b-8f354269f51a" >
+			<http:request method="PATCH" doc:name="PATCH: /externalBankAccounts" doc:id="6c9544e8-a4b2-4c88-9ea5-925e50c62233" config-ref="HTTP_Request_configuration_oracleApi" path="/externalBankAccounts/{BankAccountId}" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"BankAccountId" : vars.bankAccountId
+}]]]></http:uri-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="4df50cc8-7c89-4119-89c7-94505d7093b2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="post-instrument-assignments-mainFlow" doc:id="35d81637-bb45-45a4-b02a-f7178467c9e8" >
+		<try doc:name="Try" doc:id="5d54935d-df11-473e-8728-e575dce62349" >
+			<http:request method="POST" doc:name="POST: /instrumentAssignments" doc:id="f2061cca-57fb-4628-8a27-7db23f542291" config-ref="HTTP_Request_configuration_oracleApi" path="/instrumentAssignments" />
+		</try>
+		<ee:transform doc:name="map response" doc:id="3811d964-f6c7-45ff-8736-c4ff04699829" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="post-supplier-contacts-mainFlow" doc:id="1a20a922-fa8b-4912-bb26-337267ae4266" >
+		<try doc:name="Try" doc:id="2ba75708-6530-42a7-a5da-832c8feaa5d7" >
+			<http:request method="POST" doc:name="POST: /suppliers/{supplierId}/child/addresses" doc:id="6bb3ab00-08b0-485b-9092-0c7cbd9af15b" config-ref="HTTP_Request_configuration_oracleApi" path="/suppliers/{supplierId}/child/contacts" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"supplierId" : vars.supplierId
+}]]]></http:uri-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="0565757a-8caf-4a2a-a476-e3e612031b98" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="put-payment-method-mainFlow" doc:id="212497b8-ea50-4236-ad71-37d083671ffe" >
+		<try doc:name="Try" doc:id="727d45e8-afb5-4c01-9e21-47367d53b47d" >
+			<http:request method="PATCH" doc:name="PUT: /paymentsExternalPayees/{payeeId}/child/externalPartyPaymentMethods/{externalPaymentMethodId}" doc:id="5b7d97b2-1dd8-4086-b69a-ac3a7c8abcba" config-ref="HTTP_Request_configuration_oracleApi" path="/paymentsExternalPayees/{payeeId}/child/externalPartyPaymentMethods/{externalPaymentMethodId}" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"externalPaymentMethodId" : vars.externalPaymentMethodId,
+	"payeeId" : vars.payeeId
+}]]]></http:uri-params>
+			</http:request>
+		</try>
+		<ee:transform doc:name="map response" doc:id="2486bdf1-d61f-4d2b-b945-4c1987de14f0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+
+</mule>

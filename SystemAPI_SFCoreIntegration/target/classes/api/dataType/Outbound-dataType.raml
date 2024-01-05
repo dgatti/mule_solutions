@@ -1,0 +1,40 @@
+#%RAML 1.0 DataType
+type: object
+properties:
+  ExamAppointmentId__c:
+    type: string
+    required: false
+  ExamContentionId__c:
+    type: string
+    required: false
+  EventId__c:
+    type: string
+    required: false
+  ExamSchedulingRequestId__c:
+    type: string
+    required: false
+  Status__c:
+    type: string
+    required: false
+    enum: ['ReadyToSend','SentToVA']
+  PreviousEvent__c:
+    type: string
+    required: false
+  EventTypeID__c:
+    type: string
+    required: false
+  EventDtg__c:
+    type: string
+    required: false
+  PEJson__c:
+    type: string
+    required: false
+  Case__c:
+    type: string
+    required: false
+  ModelVersion__c:
+    type: string
+    required: false
+  SkipValidation__c:
+    type: boolean
+    required: false

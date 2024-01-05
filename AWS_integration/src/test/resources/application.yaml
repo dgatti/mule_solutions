@@ -1,0 +1,17 @@
+#Common App Properties
+http:
+  host: "0.0.0.0"
+  port: "8081"
+
+api:
+  groupId:      "${api.groupId}"
+  artifactId:   "${api.artifactId}"
+  version:      "${api.version}"
+  spec:         ""
+  majorVersion: "v1"
+  
+json:
+  logger:
+    application:
+      name:     "vems-mule-sfcore-sapi"
+      version:  "1.0.0"

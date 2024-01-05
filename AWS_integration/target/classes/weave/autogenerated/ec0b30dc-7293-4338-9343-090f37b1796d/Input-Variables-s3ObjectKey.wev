@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_ec0b30dc_7293_4338_9343_090f37b1796d_Input_Variables_s3ObjectKey = Any
+

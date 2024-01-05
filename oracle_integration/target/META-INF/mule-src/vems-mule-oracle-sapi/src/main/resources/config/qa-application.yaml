@@ -1,0 +1,9 @@
+#Common App Properties
+api:
+  id: "62396"
+        
+app:
+  oracle:
+    api:    
+      host: "ibnajb-test.fa.ocs.oraclecloud.com"
+      port: "443"

@@ -1,0 +1,19 @@
+#Common App Properties
+https:
+  keyPass: "![LMwU9lU49ETVhX81ziCo4w==]"
+  
+
+app:
+  datsi:
+    aws:
+      s3:
+        accessKey: "![MPCySVqny5bXgikFy+C1VS39tnG/x1J4]"
+        secretKey: "![MzcQ0k0RCDNu5sJNFhFD+arjjO8kNXIaJjfnejDY4eJhXVa2ZkGwaG45Q1sVjaKD]"
+
+error:
+  sfcoresapi:
+    client_id: "![change-it]"
+    client_secret: "![change-it]"
+  cloudhub:
+    client_id: "![change-it]"
+    client_secret: "![change-it]"

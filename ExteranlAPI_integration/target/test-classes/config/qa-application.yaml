@@ -1,0 +1,9 @@
+#Common App Properties
+api:
+  id: "61143"
+
+practiceMatch:
+  host: "api-dev.practicematch.com"
+  
+pnmSapi:
+  host: "vems-mule-sfpnm-sapi-qa.usg-w1.gov.cloudhub.io"

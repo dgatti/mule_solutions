@@ -1,0 +1,9 @@
+ExamRequestAcknowledgementEventMessageExample: |-
+  <?xml version='1.0' encoding='UTF-8'?>
+  <em:ExamManagementEventNotification xmlns:em="http://va.gov/vler/schemas/vlerSupersetSchema/examManagement/4.3">
+    <em:OriginatingSystem participatingSystemName="VBMS" contractorName="VBA Contractor"/>
+    <em:Destination participatingSystemName="VBA Contractor"/>
+    <em:ExamRequestAcknowledgementEvent eventDtg="2016-08-22T09:49:41.152-04:00" modelVersion="null" examSchedulingRequestUuid="d910d88e-716e-49d8-942e-8ddfb0390d5e" previousEventUuid="2f5fb79d-f54a-4f27-98ec-5a442fb4f703" eventUuid="2f5fb79d-f54a-4f27-98ec-5a442fb4f703">
+      <em:EventSource participatingSystemName="VBMS" contractorName="VBA Contractor"/>
+    </em:ExamRequestAcknowledgementEvent>
+  </em:ExamManagementEventNotification>

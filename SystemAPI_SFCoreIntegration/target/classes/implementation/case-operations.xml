@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<sub-flow name="update-ves-contentions" doc:id="ca8fca7f-a07e-45b7-b144-2417e99c5141" >
+		<json-logger:logger doc:name="Log Start" doc:id="54d86836-97fc-466c-8a58-aece4db2d688" config-ref="jsonLoggerConfig" message="Start of update ves contention" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="Log Start in Debug" doc:id="53cae111-a08e-4e2c-8649-5aeebce27239" config-ref="jsonLoggerConfig" message="Start of update ves contention" priority="DEBUG" />
+		<ee:transform doc:name="To Update Contentions" doc:id="91f1a637-480e-40cb-8a4f-6bf1e671b832" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="recordsToUpdateInSF" ><![CDATA[%dw 2.0
+output application/java
+---
+payload map {
+	Id: $.contentionId,
+	RAPSent__c: true,
+	RAPSentDate__c: $.dateSent as DateTime
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:update type="VES_Contentions__c" doc:name="Update Contentions" doc:id="e44d2944-eb91-4917-b1a8-c34213be6308" config-ref="salesforceConfig" target="responseContention" >
+			<salesforce:records ><![CDATA[#[vars.recordsToUpdateInSF]]]></salesforce:records>
+		</salesforce:update>
+		<ee:transform doc:name="Build Output" doc:id="6625e1ad-5f20-40c8-b378-6d870eb6124e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	successful: vars.responseContention.successful,
+	items: vars.responseContention.items map {
+		id: $.id,
+		successful: $.successful,
+		message: $.message,
+		statusCode: $.statusCode
+}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Log End" doc:id="a51eb2ca-43a6-4da7-aff1-78446c64b087" config-ref="jsonLoggerConfig" message="End of update ves contention" tracePoint="END" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="Log End in Debug" doc:id="160b1d5c-c758-4389-b749-56cd891df535" config-ref="jsonLoggerConfig" message="End of update ves contention" tracePoint="END" priority="DEBUG" />
+	</sub-flow>
+	<sub-flow name="get-doc-references" doc:id="01776efb-20e5-4a84-ae95-28ef7af14c91" >
+		<json-logger:logger doc:name="Log Start" doc:id="5da59f29-3020-4b7e-a055-73a01e27192a" config-ref="jsonLoggerConfig" message="Start of get doc references" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<ee:transform doc:name="query with LIKE and %" doc:id="4439c0d0-bb15-45d4-81f5-ef2865653433" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="SFquery" ><![CDATA["SELECT VA_DocumentReferenceId__c,Case__c, Id " ++
+"FROM OutboundStaging__c " ++
+"WHERE ContentionUUID__c LIKE '%" ++ vars.contentionId ++ "%'"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:query doc:name="Query Outbound Staging c" doc:id="e7d2f5fe-6d0c-41ee-b6a4-3378b887bc23" config-ref="salesforceConfig" >
+			<salesforce:salesforce-query ><![CDATA[#[vars.SFquery]]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<choice doc:name="" doc:id="445ea4b0-d303-4f6b-b621-39941035631b" >
+			<when expression="#[!isEmpty(payload)]" >
+				<ee:transform doc:name="To Json" doc:id="b6520824-3d06-4a1e-a8cb-fc4e136d107d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="Log End" doc:id="44959b9b-ef42-4bad-a1c2-a6322f384082" config-ref="jsonLoggerConfig" message="Finish of get doc references" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="error payload" doc:id="e1a62641-0eb0-42a3-8840-13e6275bfafa" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errDesc: "Collection is empty, verify parameter",
+	errType: "VALIDATION:EMPTY_COLLECTION",
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="404" doc:id="0810ff93-0a0a-44e8-8713-c952c56ce785" variableName="httpstatus" />
+				<json-logger:logger doc:name="Log End" doc:id="898bfb92-6cf5-4d0f-b875-c43ae89318ed" config-ref="jsonLoggerConfig" message="End of get doc references" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any cases available'
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="main-dbq-uploaded" doc:id="f9e6d9c1-ef17-48ad-9012-ab60863fbd83" >
+		<json-logger:logger doc:name="Log Start" doc:id="ac43d336-ae6f-4f86-aa1f-95111a1a7585" config-ref="jsonLoggerConfig" message="Start of update dbq upload confirmation">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="Log Start in Debug" doc:id="96f5f4e8-ef01-4403-a59e-bf85ccb9fca0" config-ref="jsonLoggerConfig" message="Start of update dbq upload confirmation" priority="DEBUG">
+		</json-logger:logger>
+		<ee:transform doc:name="To Update Outbound Staging" doc:id="f66df3dd-ec0a-4ec5-bbea-16de35455769" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="recordsToUpdateInSF1" ><![CDATA[%dw 2.0
+output application/java
+---
+payload map {
+	Id: $.outboundId,
+	SentToVADate__c: $.dateSent as DateTime,
+	VA_DocumentReferenceId__c: $.documentReferenceId,
+	VAResponseReceivedDate__c: $.vaReceivedDate	as DateTime
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:update type="OutboundStaging__c" doc:name="Update Outbound Staging c" doc:id="b82fb23f-ba21-49a0-ad55-5bc6e6fca065" config-ref="salesforceConfig" target="responseOutboundStaging">
+			<salesforce:records ><![CDATA[#[vars.recordsToUpdateInSF1]]]></salesforce:records>
+		</salesforce:update>
+		<ee:transform doc:name="To Update Case" doc:id="f8fa2a7b-285e-4241-b05a-a8575b344a7c">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="recordsToUpdateInSF2" ><![CDATA[%dw 2.0
+output application/java
+---
+payload map {
+	Id: $.caseId,
+	ReportSent__c: true
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:update type="Case" doc:name="Update Case" doc:id="0b13ea55-4bdc-47ea-966d-148417298a80" config-ref="salesforceConfig" target="responseCase">
+			<salesforce:records><![CDATA[#[vars.recordsToUpdateInSF2]]]></salesforce:records>
+		</salesforce:update>
+		<ee:transform doc:name="Build Output" doc:id="421958b4-9aac-4f06-a8c1-5ee19e1dfe6f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"OutboundStaging__c": {
+	successful: vars.responseOutboundStaging.successful,
+	items: vars.responseOutboundStaging.items map {
+		id: $.id,
+		successful: $.successful,
+		message: $.message,
+		statusCode: $.statusCode
+	}
+},
+	"Case": {
+	successful: vars.responseCase.successful,
+	items: vars.responseCase.items map {
+		id: $.id,
+		successful: $.successful,
+		message: $.message,
+		statusCode: $.statusCode
+	}
+}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Log End" doc:id="87b47f53-5b6c-4307-a291-72b0ef155e6d" config-ref="jsonLoggerConfig" message="End of update dbq upload confirmation" tracePoint="END">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="Log End in Debug" doc:id="0b765ecf-79ae-4a78-8fb3-2305353d4df7" config-ref="jsonLoggerConfig" message="End of update dbq upload confirmation" priority="DEBUG" tracePoint="END"/>
+	</sub-flow>
+	<sub-flow name="main-cases-ready-report" doc:id="6bae4f29-5c6b-4244-83c3-b1df5054a75e" >
+		<json-logger:logger doc:name="Log Start" doc:id="2461e61a-9cbe-4edd-af90-e2b9d92a0e03" config-ref="jsonLoggerConfig" message='Start of get cases ready to report' >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<salesforce:query doc:name="Query Outbound Staging c" doc:id="123c7168-c721-4c1f-9849-75b74fc52dfe" config-ref="salesforceConfig" >
+			<salesforce:salesforce-query ><![CDATA[SELECT BinaryCategoryText__c,BinaryDescriptionText__c,BinaryLocationURI__c,BranchOfService__c,Case__r.Id,Case__r.ReadyForReport__c,Case__r.ReportSent__c,ClaimID__c,ClaimLabel__c,ClaimProcess__c,ClientAssigningAuthority__c,ClientIdentificationID__c,ClientStatusText__c,ContentionUUID__c,CreatedById,CreatedDate,dateOfBirth__c,DBQIdentifier__c,DBQSchema__c,DocumentDescriptionText__c,DocumentID__c,DocumentStatus__c,DocumentTitleText__c,DocumentTypeVersion__c,EDIPI__c,EndProductCode__c,ExamDetailContractType__c,ExamDetailExaminerType__c,ExamDetailPhysicalSource__c,ExamSchedulingRequestUUID__c,FacilityID__c,FacilityName__c,FileNumber__c,Id,IsDeleted,LastActivityDate,LastModifiedById,LastModifiedDate,MedicalData__c,Name,OwnerId,PhysicianGivenName__c,PhysicianLastName__c,PhysicianMiddleName__c,RadDate__c,S3_DocumentPDF__r.ContentVersionId__c, S3_DocumentPDF__r.ContentDocumentId__c,S3_DocumentPDF__r.Document_URL__c, S3_DocumentPDF__r.Id , S3_DocumentXML__r.ContentVersionId__c, S3_DocumentXML__r.ContentDocumentId__c,S3_DocumentXML__r.Document_URL__c, S3_DocumentXML__r.id,S3_DocumentXML__c,SentToVADate__c,SystemModstamp,Type__c,VAResponseReceivedDate__c,VAResponse_URL__c,VA_DocumentReferenceId__c,VeteranBirthDate__c,VeteranFullName__c,VeteranGivenName__c,VeteranMiddleName__c,VeteranSexCode__c,VeteranSSNIdentification__c,VeteranSurName__c 
+
+FROM OutboundStaging__c 
+
+WHERE Case__r.ReportSent__c = :reportSentFlag and Case__r.ReadyForReport__c = :reportReadyFlag]]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[%dw 2.0
+output application/java
+---
+{
+    reportReadyFlag : true,
+    reportSentFlag : false
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<choice doc:name="" doc:id="449a4c79-fd47-4abe-bded-10821454e021" >
+			<when expression="#[!isEmpty(payload)]" >
+				<ee:transform doc:name="To Json" doc:id="021ebfb5-d92a-4967-a810-69f55b11492e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="Log End" doc:id="09e74231-f67a-4265-9eca-0c969ede396f" config-ref="jsonLoggerConfig" message="Finish of get cases ready to report" tracePoint="END">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any Payload available'
+}]]]></json-logger:content>
+		</json-logger:logger>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="error payload" doc:id="9e307750-da96-4d54-951f-cd8afe82266a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errDesc: "Collection is empty, verify parameter",
+	errType: "VALIDATION:EMPTY_COLLECTION",
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="404" doc:id="ba562180-5c5e-427c-9be4-ecefd8edf204" variableName="httpstatus" />
+				<json-logger:logger doc:name="Log End" doc:id="9b5f920b-c34d-4f77-b398-ef73811c1d07" config-ref="jsonLoggerConfig" message="End of get cases ready to report" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: 'Any cases available'
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="main-test-suite.xml" />
+	<munit:test
+		name="main-test-suite-list-bucket-objects-flowTest"
+		doc:id="ab61081f-c0b4-4694-b72f-cec59756727d" description="Test">
+		<munit:behavior>
+			<set-variable value="pdf-app-s3-js-poc" doc:name="Set Variable" doc:id="6d2691b4-d110-431f-acfd-790e50459980" variableName="bucket"/>
+		</munit:behavior>
+		<munit:execution>
+			<flow-ref doc:name="Flow-ref to list-bucket-objects-flow"
+				doc:id="1aa475ff-a7b3-439e-b148-c0e0301adad3"
+				name="list-bucket-objects-core" />
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:assert-that
+				doc:name="Assert that" doc:id="fe3183de-6046-4c6b-acf7-d6c59022f924"
+				message="The S3 Bucket can not be empty" expression="#[payload]"
+				is="#[MunitTools::notNullValue()]" />
+		</munit:validation>
+	</munit:test>
+	<munit:test name="main-test-suite-create-s3object-flowTest"
+		doc:id="cf490109-82e4-45d7-acaf-cf02a129de37" description="Test" ignore="true">
+		<munit:behavior>
+			<munit:set-event doc:name="Set Event"
+				doc:id="2f6a1c6c-65fa-4978-951d-a8d085dce1f1">
+				<munit:payload
+					value='#["&lt;root&gt;&lt;test&gt;1&lt;/test&gt;&lt;/root&gt;"]'
+					encoding="UTF-8" mediaType="application/xml" />
+				<munit:attributes value="test" />
+				<munit:variables >
+					<munit:variable key="s3ObjectKey" value="test" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to create-s3object-flow" doc:id="0f94d5cc-d86d-41df-9974-512d479f0680" name="create-s3object-core"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="76d6ec4e-0791-46b9-860b-4ac33cc08304" expression="#[payload]" is="#[MunitTools::notNullValue()]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="main-test-suite-get-s3object-flowTest" doc:id="7382887b-ec7b-4129-a0a8-32e5ea858f1a" description="Test">
+		<munit:behavior >
+			<munit:set-event doc:name="Set Event" doc:id="a5518673-7ab7-4efd-8749-99bd07e002c2" >
+				<munit:attributes value="ARCHIVE/bkp.xml" />
+				<munit:variables >
+					<munit:variable key="s3ObjectKey" value="ARCHIVE/bkp.xml" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to get-s3object-flow" doc:id="6bef3c2c-8b84-44ff-8bf7-058c531c5d9b" name="get-s3object-core"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="8aafaeb7-61b4-4606-aafe-c0de61a4d7bd" expression="#[payload]" is="#[MunitTools::notNullValue()]" message="The payload can not be null"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="s3-core-test-suite-copy-file-to-new-folderTest" doc:id="09e4080b-252a-43ee-aa8e-9eb8bb4c02e1" description="Test" ignore="true">
+		<munit:behavior >
+			<set-payload value='#[{&#10;source: {&#10;		bucket: "pdf-app-s3-js-poc",&#10;		objectKey: ".xml"&#10;	},&#10;	destination: {&#10;		bucket: "pdf-app-s3-js-poc",&#10;		objectKey: "ARCHIVE/bkp.xml"&#10;	}&#10;}]' doc:name="Set Payload" doc:id="b4d5be3a-e9c8-4d39-89b6-2651f9f6cf30" />
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to copy-file-to-new-folder" doc:id="ac98bfe3-2f33-4529-a067-98401d7d4cba" name="copy-file-to-new-folder" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="1b1dedad-02bc-4f35-9088-ba9a1e201ad4" message="The payload can not be null" expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+		</munit:validation>
+	</munit:test>
+	<munit:test name="s3-core-test-suite-delete-list-of-objectsTest" doc:id="b64f15b1-afb7-4642-a891-1b40279e9b37" description="Test" >
+		<munit:behavior >
+			<set-payload value='#[{&#10;	key: "ARCHIVE/bkp.xml"&#10;}]' doc:name="Set Payload" doc:id="154a172c-b77f-4370-8f5e-a59ae32f03a4" />
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to delete-list-of-objects" doc:id="0e3ea02a-c83e-4d51-a188-f57d14151c7e" name="delete-object" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="b33302e3-fbac-4a1e-8cf6-b0908cf7af5b" message="Payload can not be null" expression="#[payload]" is="#[MunitTools::notNullValue()]"/>
+		</munit:validation>
+	</munit:test>
+</mule>

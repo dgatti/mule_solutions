@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="practice-match-api" doc:id="ac781eda-69b4-48ea-8cda-1cc233ce330e" >
+		<http:request method="${practiceMatch.responses.httpMethod}" doc:name="call practice match api" doc:id="48019747-48e5-428c-a6b0-5d4e366e26e4" config-ref="HTTP_Request_configuration_pm" path="${practiceMatch.responses.path}">
+			<http:query-params ><![CDATA[#[vars.queryParams]]]></http:query-params>
+		</http:request>
+	</flow>
+	<flow name="pnm-sapi" doc:id="9592918f-2cdc-427d-84b6-c3b84bd37c3a">
+		<http:request method="POST" doc:name="call pnm-sapi" doc:id="9eba850e-d236-4d53-b533-c89f9a7fb660" config-ref="HTTP_Request_configuration_pnm_sapi" path="${pnmSapi.path}">
+			<http:headers><![CDATA[#[%dw 2.0
+output application/java
+---
+{
+	client_id: Mule::p('secure::app.sapi.credentials.clientId'),
+	client_secret: Mule::p('secure::app.sapi.credentials.clientSecret')
+}]]]></http:headers>
+		</http:request>
+	</flow>
+</mule>

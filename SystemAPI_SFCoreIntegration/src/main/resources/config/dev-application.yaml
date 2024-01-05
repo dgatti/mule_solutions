@@ -1,0 +1,36 @@
+#Common App Properties
+api:
+  id: "58798"
+
+env.port: "${https.port}"
+  
+app:
+  api:
+    outbound_papi:
+      url:  "https://vems-mule-documents-papi-dev.usg-w1.gov.cloudhub.io/api/s3/objects?key=#1"
+  salesforce:
+    cloud:
+      auth:
+        certPath:      "certs/vems-mule-sfcore-sapi.jks"
+        certAlias:     "app"
+        tokenEndpoint: "https://maximusves--coredev.sandbox.my.salesforce.com/services/oauth2/token"
+        audienceEndpoint: "https://test.salesforce.com"
+      reconnection:
+        frequency:  "2000"
+        attempts: "2"
+      api:
+        host: "maximusves--coredev.sandbox.my.salesforce.com"
+        respTimeout: '60000'
+        
+  sfpnm:
+    api:
+      host: "vems-mule-sfpnm-sapi-dev.usg-w1.gov.cloudhub.io"
+      port: "443"
+      url:  "/api/v1"
+      timeout: "15000"
+
+error:
+  sfcoresapi:
+    host: "vems-mule-sfcore-sapi-dev.usg-w1.gov.cloudhub.io"    
+  cloudhub:
+    environment: "075a1f44-74c5-485f-a9d3-a73d21437302"

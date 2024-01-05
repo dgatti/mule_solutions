@@ -1,0 +1,20 @@
+%dw 2.0
+// namespaces
+ns ns0 http://schemas.xmlsoap.org/soap/envelope/
+
+type auto_d4bd7abb_221b_4fa2_8d96_1e0381486ab0_Input_Payload = {|
+  ns0#Envelope @("xmlns:erp": String {"MetadataFormat": "xml"}, "xmlns:typ": String {"MetadataFormat": "xml"}): {|
+    "soapenv:Header": {|  |}, 
+    "soapenv:Body": {|
+      "typ:uploadFileToUcm": {|
+        "typ:document": {|
+          "erp:Content": String, 
+          "erp:FileName": String, 
+          "erp:DocumentSecurityGroup": String, 
+          "erp:DocumentAccount": String
+        |}
+      |}
+    |}
+  |}
+|}
+

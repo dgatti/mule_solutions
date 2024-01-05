@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="get:\external-report\payment-confirmation:vems-mule-oracle-sapi-config" doc:id="be19bc15-5275-4454-bceb-0617866f7310" >
+		<json-logger:logger doc:name="" doc:id="e52f75cf-d2e4-4958-9b82-f3867fbc3bae" config-ref="jsonLoggerConfig" message='#["Begin process external report"]' />
+		<ee:transform doc:name="set variables for oracle call" doc:id="819cbdc7-08ac-4a36-9c15-6c477ebb701f">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="reportAbsolutePath"><![CDATA[%dw 2.0
+output application/java
+---
+if(attributes.queryParams.'operation'== "AP") "/Custom/Interface Extracts/AP Payment Report.xdo" 
+else "/Custom/Interface Extracts/AR Receipt Report.xdo"
+]]></ee:set-variable>
+				<ee:set-variable variableName="fromDate" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.'fromDate']]></ee:set-variable>
+				<ee:set-variable variableName="toDate" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.'toDate']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="payment-transactions-oracle-report-service" doc:id="6e60e99f-56ff-4dca-bcd5-582f9f5246ce" name="payment-confirmation-oracle-report-service" />
+		<logger level="INFO" doc:name="Logger" doc:id="b4f38666-f917-41a6-9019-fe0103c52307" message="#[payload.Envelope.Body.runReportResponse.runReportReturn.reportBytes]"/>
+		<ee:transform doc:name="decodeReport" doc:id="e32a9e8a-6118-4c91-ba52-8847b5058eed" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Binaries 
+output application/csv
+
+---
+read(fromBase64(payload.Envelope.Body.runReportResponse.runReportReturn.reportBytes),'application/csv')]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="" doc:id="d3abb06f-8136-4b21-adda-ba507f3c441e" config-ref="jsonLoggerConfig" message='#["End Process"]' tracePoint="END" />
+	</flow>
+</mule>

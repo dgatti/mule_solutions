@@ -1,0 +1,14 @@
+#Common App Properties
+api:
+  id: "58798"
+app:
+  salesforce:
+    cloud:
+      auth:
+        certPath:      "certs/vems-mule-sfcore-sapi.jks"
+        certAlias:     "app"
+        tokenEndpoint: "https://maximusves--coredev.sandbox.my.salesforce.com/services/oauth2/token"
+        audienceEndpoint: "https://test.salesforce.com"
+      reconnection:
+        frequency:  "2000"
+        attempts:   "2"

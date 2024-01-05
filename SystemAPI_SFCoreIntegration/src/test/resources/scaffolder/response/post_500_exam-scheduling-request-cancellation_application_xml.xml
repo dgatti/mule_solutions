@@ -1,0 +1,19 @@
+RequestScopedFaultEventMessageExample: |-
+  <?xml version="1.0" encoding="UTF-8" ?>
+  <em:ExamManagementEventNotification xmlns:em="http://va.gov/vler/schemas/vlerSupersetSchema/examManagement/4.3"
+                                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                      xsi:schemaLocation="http://va.gov/vler/schemas/vlerSupersetSchema/examManagement/4.3 ../../../../XMLschemas/exchange/ExamManagement-4.3.xsd">
+
+      <em:OriginatingSystem participatingSystemName="VBMS"/>
+      <em:Destination participatingSystemName="VBA Contractor" contractorName="QTC"/>
+
+      <em:RequestScopedFaultEvent eventUuid="194aa797-7293-4e25-9f2e-78269911910e"
+                                  eventDtg="2016-08-25T13:20:00Z"
+                                  examSchedulingRequestUuid="194aa797-7293-4e25-9f2e-78269911910e"
+                                  previousEventUuid="d2966131-6524-49a7-963e-8d6837ef2211"
+                                  modelVersion="4.3"
+                                  systemReference="EM-003">
+          <em:Details>Exam Scheduling request not found.</em:Details>
+          <em:EventSource participatingSystemName="VBA Contractor" contractorName="QTC"/>
+      </em:RequestScopedFaultEvent>
+  </em:ExamManagementEventNotification>

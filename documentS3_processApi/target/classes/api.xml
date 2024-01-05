@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <flow name="vems-mule-documents-papi-main" doc:id="11b812cd-404b-44be-beef-ecfc4efd063a">
+        <http:listener config-ref="apiHttpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="apiConfig" />
+        <error-handler ref="api-error-handler" />
+    </flow>
+    <flow name="get:\s3\objects:apiConfig">
+        <set-variable value="#[attributes.queryParams.key]" doc:name="Set s3KeyObject" doc:id="f74247be-a1be-4858-a130-307c17623b27" variableName="s3KeyObject" />
+        <set-variable value="#[attributes.queryParams.source]" doc:name="Set source" doc:id="115dba57-d81e-4c29-8497-081dd8fdbc98" variableName="source" />
+		<flow-ref doc:name="main-get-s3object-aws-sapi-main-event-flow" doc:id="305ab7e5-6d99-4734-af86-09297403e162" name="get-document-s3-aws-sapi-flow" />
+    </flow>
+    <flow name="post:\s3\objects:multipart\form-data:apiConfig" doc:id="532ca7d5-35f6-4535-a60e-e0de284a3938">
+        <flow-ref doc:name="main-get-s3object-aws-sapi-main-event-flow" doc:id="9e04c8ff-531e-443a-a2cd-225827b8a403" name="post-document-s3-aws-sapi-flow" />
+    </flow>
+    <flow name="get:\health:apiConfig">
+        <logger level="INFO" message="get:\health:apiConfig" />
+    </flow>
+    <flow name="post:\poc\merge-documents:multipart\form-data:apiConfig">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  code: "OK",
+  message: "Success"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

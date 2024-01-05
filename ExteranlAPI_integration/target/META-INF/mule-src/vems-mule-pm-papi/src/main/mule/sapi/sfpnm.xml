@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="get-recordType-pnm-sapi-flow" doc:id="40208368-f89c-493a-a4fd-1fb5343284ac" >
+		<http:request method="GET" doc:name="get-recordType-pnm-sapi" doc:id="42aa440c-216a-46bf-a591-cd19a92fcf66" config-ref="HTTP_Request_configuration_pnm_sapi" path="${pnmSapi.methods.get_recordType}" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="patch-lead-pnm-sapi-flow" doc:id="7d39e7e3-2dc2-490e-818a-fa71f05e5e7b" >
+		<http:request method="PATCH" doc:name="patch-lead-pnm-sapi" doc:id="9f1b2bbf-9ace-4fd9-b6ab-927308443440" config-ref="HTTP_Request_configuration_pnm_sapi" path="${pnmSapi.methods.patch_lead}" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="false" doc:name="On Error Propagate" doc:id="dd78d1f6-beb0-49da-a313-f2e7a34ee896" >
+				<json-logger:logger doc:name="Logger" doc:id="c5c218a0-fb56-49a8-b6f0-17c586ddbb44" config-ref="JSONLoggerConfig" message="request">
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+   
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="post-content-version-pnm-sapi-flow" doc:id="7a11fd22-c153-46c4-9321-fc89525f4224" >
+		<http:request method="POST" doc:name="post-content-version-pnm-sapi" doc:id="de92fc41-d6f9-48d6-8c4a-8e3fb8eddb34" config-ref="HTTP_Request_configuration_pnm_sapi" path="${pnmSapi.methods.post_content_version}" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="post-content-document-link-pnm-sapi-flow" doc:id="57177396-10c0-4f57-99c6-6b6e6f49798b" >
+		<http:request method="POST" doc:name="patch-content-document-link-pnm-sapi" doc:id="e7cc2f68-3e6f-4fb1-8e90-d360d5d2c027" config-ref="HTTP_Request_configuration_pnm_sapi" path="${pnmSapi.methods.post_content_document_link}" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="get-content-version-by-id-pnm-sapi-flow" doc:id="843c760f-3a37-4feb-a202-49a2867c27af" >
+		<http:request method="GET" doc:name="get-content-version-by-id-pnm-sapi" doc:id="4019f0fd-97f1-4df2-ab70-9aca29fb3969" config-ref="HTTP_Request_configuration_pnm_sapi" path="${pnmSapi.methods.get_content_version}" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"id" : vars.contentVersionId
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="get-case-id-by-casenumber-pnm-sapi-flow" doc:id="71097a40-2d93-4f62-aa0f-b37eea8f5c47" >
+		<http:request method="GET" doc:name="get-case-id-by-casenumber-pnm-sapi" doc:id="5b8a4c6f-dd67-4362-824b-ab725a4d4688" config-ref="HTTP_Request_configuration_pnm_sapi" path="${pnmSapi.methods.get_case_id}" correlationId="#[correlationId]" outputMimeType="application/json" outputEncoding="UTF-8" responseTimeout="10000" >
+			<http:headers ><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"caseNumber" : vars.AlternateOpportunityID
+}]]]></http:query-params>
+		</http:request>
+	</flow>
+</mule>

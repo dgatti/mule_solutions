@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="salesforce-core-providerScorecardUpdate-flow" doc:id="b849c775-8e40-4d4c-9a2e-d7ceb2107ee0" >
+		<salesforce:replay-channel-listener streamingChannel="${app.salesforce.cloud.event.providerScorecardSync.lstChannel.name}" replayOption="ONLY_NEW" doc:name="SF Core channel listener (Provider_Scorecard_Update__e)" doc:id="68743022-a6ef-4b5d-b548-3f5dc16b376f" config-ref="salesforceConfig" autoReplay="true" >
+			<reconnect count="4" />
+
+		</salesforce:replay-channel-listener>
+
+		<json-logger:logger doc:name="Log New Event" doc:id="43ab5b0a-5f81-4c30-9979-eea77c1b000e" config-ref="jsonLoggerConfig" message="EVENT START: Provider_Account_Update__e" />
+		
+		<set-payload value='#[%dw 2.0&#10;&#10;output json&#10;---&#10;payload.data.payload]' doc:name="Set Payload" doc:id="5e7d93d1-055a-4f34-adb6-90c541f62b33" />
+		<choice doc:name="check providerId" doc:id="e13930f4-9b4c-4a82-99a4-2bb2ca748e6f" >
+			<when expression="#[!isEmpty(payload.ProviderId__c) or ((payload.ProviderId__c) != null)]" >
+<!-- [STUDIO:"Set ScorecardPayload"]				<set-variable value="#[payload]" doc:name="Set ScorecardPayload" doc:id="0b63db11-8c6b-44f7-a763-91cfceb05aee" variableName="scorecardPayload" /> [STUDIO] -->
+				<ee:transform doc:name="Mapping to SAPI request" doc:id="e2e6b52f-dbe4-4d9b-a6cb-f383adf1f051">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json skipNullOn="everywhere"
+---
+
+  {
+    "actionRequired": payload.Action_Required__c,
+    ("description": payload.Description__c) if (!isEmpty(payload.Description__c)),
+    "dueDateOnActionRequired": payload.Due_Date_on_Action_Required__c as Date,
+    "entryDate": payload.Entry_Date__c as Date,
+    "positiveNegative": payload.Positive_Negative__c,
+    "providerId": payload.ProviderId__c,
+    "recordType": payload.RecordType_Name__c,
+    ("name": payload.Name__c) if (!isEmpty(payload.Name__c)),
+    "typeOfFeedback": payload.Type_of_Feedback__c,
+    "whoInitiated": payload.Who_Initiated__c,
+    "coreId": payload.CoreId__c default ''
+  }
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<try doc:name="Try" doc:id="a7cec78e-11b4-409c-98b5-e61ba386b1a2" >
+					<flow-ref doc:name="post-scorecard-request" doc:id="c99e4502-d124-43f2-b13c-a44f6c5acf7b" name="post-scorecard-pnm-sapi-flow" />
+<json-logger:logger doc:name="Logger" doc:id="6b129fb1-2e6c-4615-ab0a-43d441051557" config-ref="jsonLoggerConfig" message="EVENT END: Provider_scorecard_Update__e" />
+					<!-- [STUDIO:"Transform Message"]					<ee:transform doc:name="Transform Message" doc:id="f75a4f8a-dd2f-4290-803e-f2c46a479816">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+&#45;&#45;-
+{
+    "Id": vars.scorecardPayload.Provider__c,
+    "ProviderId__c": payload.recordId
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform> [STUDIO] -->
+<!-- [STUDIO:"patch-account-pnm-sapi-flow"]					<flow-ref doc:name="patch-account-pnm-sapi-flow" doc:id="c4cf8728-28df-42fa-a34a-090fdbfde232" name="patch-account-pnm-sapi-flow" /> [STUDIO] -->
+					<json-logger:logger doc:name="Logger" doc:id="c6e6424c-2f09-435d-b411-dd5eaf9c56a9" config-ref="jsonLoggerConfig" message="EVENT END: scorecard_Update__e" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="50c0f639-e2e3-4ba8-9090-0d0b30399633" >
+							<json-logger:logger doc:name="Error Logger" doc:id="cf034923-39a1-4bfe-af70-1eac0979c19c" config-ref="jsonLoggerConfig" message="ERROR: Error Returned from  SFPnmSapi: /scorecard" priority="WARN" >
+								<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload),
+    errorDesc:  "Error: " ++ (error.muleMessage.typedValue.error.message default "")
+}]]]></json-logger:content>
+							</json-logger:logger>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<json-logger:logger doc:name="Error Logger" doc:id="aec2691f-6ba1-422b-9977-88d6c8c0f08e" config-ref="jsonLoggerConfig" message="WARNING: Event received without ProviderId" priority="WARN" />
+			</otherwise>
+		</choice>
+		<error-handler ref="event-error-handler" />
+	</flow>
+</mule>

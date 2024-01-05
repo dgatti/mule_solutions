@@ -1,0 +1,21 @@
+%dw 2.0
+
+type auto_b3d2ff49_ac30_4b74_8b76_3d2762df9bf7_Output_Payload = {|
+  ETag?: String, 
+  bucketKeyEnabled?: Boolean {"typeId": "boolean"}, 
+  checksumCRC32?: String, 
+  checksumCRC32C?: String, 
+  checksumSHA1?: String, 
+  checksumSHA256?: String, 
+  expiration?: String, 
+  requestCharged?: String, 
+  serverSideEncryption?: String, 
+  sseCustomerAlgorithm?: String, 
+  sseCustomerKeyMD5?: String, 
+  ssekmsEncryptionContext?: String, 
+  ssekmsKeyId?: String, 
+  versionId?: String
+|} {"typeAlias": "PutObjectResponse",
+"class": "org.mule.extension.s3.api.response.PutObjectResponse",
+"typeId": "org.mule.extension.s3.api.response.PutObjectResponse"}
+

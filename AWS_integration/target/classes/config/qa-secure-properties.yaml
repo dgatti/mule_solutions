@@ -1,0 +1,28 @@
+#QA Secure App Properties
+https:
+  keyPass: "![LMwU9lU49ETVhX81ziCo4w==]"
+
+app:
+  datsi:
+    aws:
+      s3:
+        accessKey: "![MPCySVqny5bXgikFy+C1VS39tnG/x1J4]"
+        secretKey: "![MzcQ0k0RCDNu5sJNFhFD+arjjO8kNXIaJjfnejDY4eJhXVa2ZkGwaG45Q1sVjaKD]"
+  pnm:
+    aws:
+      s3:
+        accessKey: "![yALo5AtcdGGHgSprv/V3NXeTYiUQw2J9]"
+        secretKey: "![ORBgHx4kZmjydEadSW0O/JBjl1D0AdT8yndmDvJoc9SvE8ArzG8f8HLhIrAoug+z]"
+        
+  postgres:
+    db:
+      username: "![dzkGgvo/E589vpvai7VrWA==]"
+      password: "![dzkGgvo/E58/ZdH2yJcNaTXF3LTHcPMv]"
+
+error:
+  sfcoresapi:
+    client_id: "![l5lhPi282s0Ogb6YlYBARIg88yjTaZrZIwTUedEorH1zHMV8G3G2EA==]"
+    client_secret: "![OCzpxM9WwQuXZHc5QiE8BXaKXQqO2w9LgwZzJGZ17o8a+vjnrHp/2Q==]"
+  cloudhub:
+    client_id: "![+NkGJxD1W5ojRUWrl1sza3ExTyBMhwLn6AK5IvD0ngsZnXXM387ebg==]"
+    client_secret: "![Yx00T6vkQE2w6ys1y58gR1wsgkIDdpDSpVNIHsDR3dmyckFVzNMPNQ==]"

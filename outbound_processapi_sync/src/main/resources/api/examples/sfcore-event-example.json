@@ -1,0 +1,33 @@
+{
+  "schemaLocation": "http://va.gov/vler/schemas/vlerSupersetSchema/examManagement/4.3  ../../../../XMLschemas/exchange/ExamManagement-4.3.xsd",
+  "OriginatingSystem": {
+    "participatingSystemName": "2342342",
+    "contractorName": "dfddfwsd" 
+  },
+  "Destination": {
+    "participatingSystemName": "VBMS"
+  },
+  "ClarificationRequestEvent": {
+    "eventUuid": "md928yr97h2du",
+    "previousEventUuid": "kjhkgfghh-9876trfghvjb-oiuygufhcgvbn",
+    "eventDtg": "2023-08-18",
+    "examSchedulingRequestUuid": "jkhgvf675rt86gyb8yg8u-9087yt67yuvghjb n",
+    "dateOfRequest": "2023-08-18",
+    "pointOfContactName": "TESTE",
+    "modelVersion": "kjnbvfs",
+    "EventSource": {
+      "participatingSystemName": "TEST",
+      "contractorName": "CN"
+    },
+    "ClarificationReason": "",
+    "PointOfContactPhone": {
+      "primaryPhone": "8323333620"
+    },
+    "UnclearContentionReferences": {
+      "ContentionClarificationRequest": {
+        "contentionUuid": "mlkbvbsbj-079t8yvb",
+        "ContentionClarificationFreeText": "LOREM IPSU"
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:compression="http://www.mulesoft.org/schema/mule/compression"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:module-error-handler-plugin="http://www.mulesoft.org/schema/mule/module-error-handler-plugin"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/module-error-handler-plugin http://www.mulesoft.org/schema/mule/module-error-handler-plugin/current/mule-module-error-handler-plugin.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd">
+	<error-handler name="api-error-handler" doc:id="29b8bfc9-2270-4e49-81c7-6055480563b6">
+		<on-error-propagate enableNotifications="true"
+			logException="true" doc:name="On Error Propagate"
+			doc:id="77d210e7-b205-4e19-aada-1472fae56b5a">
+			<json-logger:logger doc:name="Log Exception" 
+				config-ref="jsonLoggerConfig"
+				doc:id="b815e81d-4f46-432a-8d65-780baa2ed434" priority="ERROR"
+				tracePoint="EXCEPTION" message="An error has occured"/>
+			<choice doc:name="Exists compressed Error" doc:id="dee35c67-5fc6-4b6f-9be3-c10f8209808b" >
+				<when expression="#[!isEmpty(error.errorMessage.payload.^raw)]">
+					<compression:decompress doc:name=" Decompress Error" doc:id="bc7ba1ef-8bd4-46db-a4fa-87036fb410ab" target="errorMessage">
+				<compression:compressed><![CDATA[#[error.errorMessage.payload.^raw]]]></compression:compressed>
+				<compression:decompressor>
+					<compression:gzip-decompressor />
+				</compression:decompressor>
+			</compression:decompress>
+				</when>
+				<otherwise >
+					<set-variable value="#[error.description]" doc:name="Set errorMessage" doc:id="65f55815-3250-416a-b41c-189df966b7bc" variableName="errorMessage"/>
+				</otherwise>
+			</choice>
+			<module-error-handler-plugin:process-error
+				doc:name="Process Error"
+				doc:id="135149c5-01c5-443d-97c3-ffbfab07fc9e" previousError="#[vars.errorMessage default '']"/>
+			<set-variable value="#[attributes.httpStatus]"
+				doc:name="Set Status" doc:id="266eeefc-af72-404e-9955-ff50943ab648"
+				variableName="httpStatus"/>
+			<json-logger:logger
+				doc:name="Log End with Exception"
+				doc:id="718e9bed-9b97-4bab-b8fe-3bfb7323c47f" priority="ERROR"
+				tracePoint="END" message="Finished with Error"
+				config-ref="jsonLoggerConfig"/>
+		</on-error-propagate>
+	</error-handler>
+	<sub-flow name="improveErrorMessage" doc:id="d4bd7abb-221b-4fa2-8d96-1e0381486ab0" >
+		<json-logger:logger doc:name="Error" doc:id="e99d447c-0038-43c2-a65a-82d86beecefb" config-ref="jsonLoggerConfig" message="Unexpected Error When consuming SOAP service" tracePoint="EXCEPTION" />
+		<ee:transform doc:name="Transform Message" doc:id="6a04462f-efa5-4c89-bf60-2c190b5951a6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": "Unexpected Error When consuming SOAP service",
+	"statusCode": 500,
+	"reason": error.description
+
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+</mule>

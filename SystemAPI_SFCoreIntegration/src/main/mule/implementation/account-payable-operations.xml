@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="accounts-payable-update-put" doc:id="f978c0c1-d012-41c4-a33a-bfbe02ba4817" >
+		<json-logger:logger doc:name="Logger" doc:id="dc23e05a-0569-4421-b427-df0ef4717064" config-ref="jsonLoggerConfig" message='#["Begin Query"]'/>
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="receivedPayload" doc:id="aa1d19ba-eb69-4d45-ba78-7a03e7518c22" variableName="receivedPayload" />
+		<salesforce:query doc:name="Query Recovery nameId" doc:id="cc8d4385-3bcb-4811-abf4-f92315271a8f" config-ref="salesforceConfig">
+			<salesforce:salesforce-query ><![CDATA[SELECT Id FROM Payment__c WHERE Name = ':nameId']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	nameId : vars.Id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<choice doc:name="" doc:id="2d1e0036-7c95-47fe-9e12-cd3e910e76b6">
+			<when expression="#[!isEmpty(payload)]">
+				<set-variable value="#[payload.Id[0]]" doc:name="recordId" doc:id="9a06a903-f733-4477-b685-194aa45fa853" variableName="recordId" />
+				<ee:transform doc:name="Transform Message" doc:id="ad5ffbfc-0501-4af3-8b81-59dce79f33e3">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var fieldMappings = {
+    "status": "Status__c",
+    "fusionUpdateError": "Fusion_Update_Error__c",
+    "fusionErrorMessage": "Fusion_Error_Message__c"
+}
+---
+[(vars."receivedPayload" filterObject (value, key, index) -> value != null and value != "") 
+    mapObject ((value, key) -> {
+        (fieldMappings[key] default key): value
+    }) 
+    ++ {"Id": vars."recordId"}]
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<salesforce:update doc:name="Update Status" doc:id="191a6d8e-c376-4f9e-b38c-200583b2827f" config-ref="salesforceConfig" type="Payment__c" />
+				<choice doc:name="Choice" doc:id="633547af-37d9-46e0-a1f0-6e579d0a22cd">
+					<when expression="#[payload.items[0].successful == true]">
+						<ee:transform doc:name="Transform Message" doc:id="6b3b6877-f7a5-44d3-a1a2-e0d9f55d7031">
+			<ee:message>
+				<ee:set-payload><![CDATA[output application/json
+---
+{
+  status: "success",
+  message: "Status Updated"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+						<json-logger:logger doc:name="Logger" doc:id="230aea92-e03e-4ada-b0c6-bc4de1c70f77" config-ref="jsonLoggerConfig" message='#["End query"]' />
+					</when>
+					<otherwise>
+						<ee:transform doc:name="error payload" doc:id="ddee276a-8127-4f25-87fa-d438d2247fd6">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorCode: "UPSERT_URL_UPDATE_ERROR",
+	errorMessage: payload.items[0].message,
+	transactionId: correlationId,
+	timeStamp: now()
+	//errDesc: "Upsert failed, invalid input, verify parameters",
+	//errType: "VALIDATION:INVALID_INPUT"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<set-variable value="400" doc:name="400" doc:id="6e0007d6-3314-4e34-a2d9-d5dade4c2175" variableName="httpStatus" />
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise>
+				<ee:transform doc:name="error payload" doc:id="9b0d59ae-d57f-48cd-a16c-1d1818d0ea9b">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errDesc: "Collection is empty, verify IDs",
+	errType: "VALIDATION:EMPTY_COLLECTION",
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="404" doc:id="95fc00b0-aa11-44b8-bf6a-5aafd94a4f43" variableName="httpstatus" />
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="528d4a68-3477-4f02-a74c-ae6081d7db4c" >
+				<logger level="ERROR" doc:name="Logger" doc:id="6148a994-e54f-40e8-b749-5d120110c29c" message="#[{&#10;	errMsg: error.errorMessage,&#10;	errDesc: error.description,&#10;	errType: error.errorType.asString&#10;}]" />
+				<ee:transform doc:name="Transform Message" doc:id="169e186f-03ad-4629-ac11-e9c3b9a1394c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="404" doc:id="007f1890-1b36-464b-98a2-a2688f14dc11" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="main-query-payment" doc:id="e2fa78c4-fee4-43e6-a39a-68886e8634d8" >
+		<json-logger:logger doc:name="Logger" doc:id="dd56d6d8-1d59-4acb-9e52-ea5a7d43550d" config-ref="jsonLoggerConfig" message='"Process Begin"' />
+
+		<salesforce:query doc:name="Query" doc:id="a055fe90-50c5-41c3-b73c-55ba759ab808" config-ref="salesforceConfig" >
+			<salesforce:salesforce-query ><![CDATA[SELECT Id, Name, Payment_Type__c, Currency__c, Invoice_Number__c, Expense_Item_Number__c, Expense_Report_Number__c, Amount__c, Expense_Report_Amount_Approved__c, Payee_Name__c,VES_Case_ID__c, Expense_Appointment_Number__c, Invoice_Appointment_Number__c, Description__c, Status__c, Financial_Account__c,Region__c,Region_Abbreviated__c,Purchase_Order__c,Product_Name__c,Fusion_Update_Error__c, Fusion_Error_Message__c, Exam_Date__c FROM Payment__c WHERE Status__c = ':status']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[%dw 2.0
+output application/java
+---
+{
+    status : vars.status
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<choice doc:name="" doc:id="3b78545b-7b3f-4e69-aefa-3a72548fab10">
+			<when expression="#[!isEmpty(payload)]">
+				<ee:transform doc:name="Transform Message" doc:id="22e02f09-c23f-4f12-984a-4a396bcd82ff">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+    payload map {
+    
+            "Id":$.Id,
+            "paymentType": $.Payment_Type__c,
+            "currency":$.Currency__c,
+            "invoiceNumber":$.Invoice_Number__c,
+            "expenseItemNumber": $.Expense_Item_Number__c,
+            "expenseReportNumber": $.Expense_Report_Number__c,
+            "amount": $.Amount__c,
+            "expenseReportAmountApproved": $.Expense_Report_Amount_Approved__c,
+            "payeeName": $.Payee_Name__c,
+            "fusionInvoiceNumber": $.fusionInvoiceNumber,
+            "VESCaseID": $.VES_Case_ID__c,
+            "expenseAppointmentNumber": $.Expense_Appointment_Number__c,
+            "invoiceAppointmentNumber": $.Invoice_Appointment_Number__c,
+            "description": $.Description__c,
+            "status": $.Status__c,
+            "financialAccount": $.Financial_Account__c,
+            "region": $.Region__c,
+            "regionAbbreviated": $.Region_Abbreviated__c,
+            "name": $.Name,
+            "purchaseOrderId": $.Purchase_Order__c,
+            "productName": $.Product_Name__c,
+            "fusionUpdateError": $.Fusion_Update_Error__c,
+            "fusionErrorMessage": $.Fusion_Error_Message__c,
+            "examDate": $.Exam_Date__c
+
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<json-logger:logger doc:name="Logger1" doc:id="25744a1c-101e-4803-bd22-efb51892c396" config-ref="jsonLoggerConfig" message='#["Ending Process"]' />
+			</when>
+			<otherwise>
+				<ee:transform doc:name="error payload" doc:id="d77d79ea-70e9-4c0a-bf7e-5692ef84f34a">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errDesc: "Collection is empty, verify parameter",
+	errType: "VALIDATION:EMPTY_COLLECTION",
+	transactionId: correlationId,
+	timeStamp: now()
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="404" doc:id="ede46ce9-3bcb-40ec-950e-d4e3da24eb5c" variableName="httpstatus" />
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d60386ba-a687-4673-be12-f7836fedb6f1" >
+				<logger level="ERROR" doc:name="Logger" doc:id="aa3c2845-376f-4e3e-921c-e2b2a168db37" message="#[{&#10;	errMsg: error.errorMessage,&#10;	errDesc: error.description,&#10;	errType: error.errorType.asString&#10;}]" />
+				<ee:transform doc:name="Transform Message" doc:id="8b47c92e-2caf-4381-b917-964d344fe4b0" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="404" doc:id="ef938209-4cc3-4662-a0e0-ed26cd9f86f4" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

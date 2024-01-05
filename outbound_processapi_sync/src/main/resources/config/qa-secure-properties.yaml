@@ -1,0 +1,30 @@
+https:
+  keyPass: "![LMwU9lU49ETVhX81ziCo4w==]"
+
+app:
+  salesforce:
+    cloud:
+      auth:
+        username: "![EikoThIsIcs2HD7u7ePh2qxtHxU7dm+iCOQzN23VcTso506ib57EAQ==]"
+        password: "![k9/vDqF8x10bDUN2qbINeg==]"
+        consumerKey: "![y51djiH6fl6rhF+fGCXJ7PNZ14+8SsSVwRI2BDg8nrbD1Edmztsv+CiIDTNz5oJSq+1aw3/UMwa1kc5e7zFIBhxnB1zwtrKVs1l/kzSsJbLcYMkOAzlpLA==]"
+        consumerSecret: "![2QYvjKcrYeNmr1DOeK41OTPgQaEdF/YnAv4kzoF+IIXCQ2h/2nfsXOsYQc7eHrDCxC81TCaj0JZbFa8UofSoyCMbc4tfKKIA]"
+        certPassword: "![wy5qlE5XYBrKAXNkIjyTRw==]"  
+  sapi:
+    credentials:
+      clientId: "![0w7y0Dhhd0aP4wpqdMH6PsubfkTVMKALLYKBCt8QBI8Jpg8yMHvBgg==]"
+      clientSecret: "![j4TybN8N5EUNyJNMIiiEmI+EDuYUqIoen8xn8c7qPfvyKk3K9GUEPQ==]"      
+
+error:
+  sfcoresapi:
+    client_id: "![l5lhPi282s0Ogb6YlYBARIg88yjTaZrZIwTUedEorH1zHMV8G3G2EA==]"
+    client_secret: "![OCzpxM9WwQuXZHc5QiE8BXaKXQqO2w9LgwZzJGZ17o8a+vjnrHp/2Q==]"
+  cloudhub:
+    client_id: "![+NkGJxD1W5ojRUWrl1sza3ExTyBMhwLn6AK5IvD0ngsZnXXM387ebg==]"
+    client_secret: "![Yx00T6vkQE2w6ys1y58gR1wsgkIDdpDSpVNIHsDR3dmyckFVzNMPNQ==]"
+
+aws:
+  sqs:
+    accessKey: "![MPCySVqny5b89iZ6rtMzfkGLeTci1LDQ]"
+    secretKey: "![3HkGk6ULF+fOMRYQkN4I2kEwJwx/huxyuxdhDU1b7awhx5VkXKILIfi1q/UV77Kv]"
+    arn: "![ZFjLCmMu7EzMhLQNdkT5l3hot9IAxVy569wwIup2q9yIZRla4USL+QfX86tczBy40uZ3k2qmn+URGCraYR9NKmT2fIvrXB5hertR5riz4Uc=]"

@@ -1,0 +1,29 @@
+#Common App Properties
+http:
+  host: "0.0.0.0"
+  port: "8081"
+
+https:
+  host: "0.0.0.0"
+  port: "8082"
+  private:
+    port: "8092"
+
+api:
+  groupId:      "${api.groupId}"
+  artifactId:   "${api.artifactId}"
+  version:      "${api.version}"
+  spec:         "resource::${api.groupId}:${api.artifactId}:${api.version}-raml.zip:vems-mule-aws-sapi.raml"
+  majorVersion: "v1"
+
+files:
+  maxSize: "1024000"
+        
+json:
+  logger:
+    application:
+      name:     "${api.artifactId}"
+      version:  "${api.version}"
+
+error:
+  domain: "${api.artifactId}"

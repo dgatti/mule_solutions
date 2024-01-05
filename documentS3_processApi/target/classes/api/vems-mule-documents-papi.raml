@@ -1,0 +1,111 @@
+#%RAML 1.0
+title: Maximus VES Salesforce Core Document PAPI
+description: Process API responsible for document managements events from Salesforce Core
+version: v1
+protocols:
+  - HTTPS
+
+traits:
+  client-id: !include ./exchange_modules/a49d2bd5-98e7-47cb-be7d-a153583e60a6/common-raml-fragments/1.0.0/traits/common/client-id-trait.raml
+
+/s3/objects:
+  is:
+    - client-id
+  get:
+    description: This resource encpasulates the AWS S3 endpoint to get a S3 object
+    queryParameters:
+      key:
+        example:
+          value: unique-document-name.pdf
+        description: This is the S3 Object key which is unique inside S3 Bucket
+        type: string
+        required: true
+    headers:
+      x-amz-meta-externalId:
+        required: false
+        description: S3ExternaldocumentId
+        type: string
+    responses:
+      200:
+        description: Success Response
+        headers:
+          Content-Disposition:
+        body:
+          application/octet-stream:
+            description: Binary base64 response object
+      400:
+        description: Bad Request
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      401:
+        description: Unauthorized
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      404:
+        description: Not Found
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      500:
+        description: Internal Server Error
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      503:
+        description: Service Unavailable
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+
+  post:
+    description: This resource encpasulates the AWS S3 system api to upload a S3 object
+    headers:
+      x-amz-meta-externalId:
+        required: false
+        description: S3ExternaldocumentId
+        type: string
+    body:
+      multipart/form-data:
+        properties:
+          name: 
+            type: string
+            required: true
+          file:
+            type: file
+            required: true
+    responses:
+      201:
+        body:
+          application/json:
+            properties:
+              message: string
+              url: string
+            example: !include examples/ResponsesSuccess.raml
+      400:
+        description: Bad Request
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      401:
+        description: Unauthorized
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      404:
+        description: Not Found
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      500:
+        description: Internal Server Error
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+      503:
+        description: Service Unavailable
+        body:
+          application/json:
+            example: !include examples/ResponsesError.raml
+

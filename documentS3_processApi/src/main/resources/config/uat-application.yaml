@@ -1,0 +1,58 @@
+#Common App Properties
+api:
+  id: "61006"
+  
+app:
+  salesforce:
+    cloud:
+      auth:
+        certPath:      "certs/vems-mule-sfcore-sapi.jks"
+        certAlias:     "app"
+        tokenEndpoint: "https://maximusves--coredev.sandbox.my.salesforce.com/services/oauth2/token"
+        audienceEndpoint: "https://test.salesforce.com"
+      reconnection:
+        frequency:  "2000"
+        attempts:   "2"
+  s3:
+    api:
+      host: "mule-worker-internal-vems-mule-aws-sapi-uat.usg-w1.gov.cloudhub.io"
+      port: "8092"
+      url:  "/api"
+      methods:
+        getObject:    "/s3/objects"
+        postObject:   "/s3/objects"
+  sfcore:
+    api:
+      host: "mule-worker-internal-vems-mule-sfcore-sapi-uat.usg-w1.gov.cloudhub.io"
+      port: "8092"
+      url:  "/api"
+      methods:
+        s3_document:                          "/s3-document"
+        s3_document_update:                   "/s3-document"
+        content-version-s3:                   "/content-version-s3"
+        exam_scheduling_request_created:      "/exam-scheduling-request-created"
+        exam_scheduling_request_cancellation: "/exam-scheduling-request-cancellation"
+        rework_exam_scheduling_request:       "/rework-exam-scheduling-request-created"
+    credentials:
+      client_id:     "e14a7d608d8c4565a7430d6dec95f83c"
+      client_secret: "2D68922b82614A5EA280078eD5bD61fB"
+  
+  sfpnm:
+    api:
+      host: "mule-worker-internal-vems-mule-sfpnm-sapi-uat.usg-w1.gov.cloudhub.io"
+      port: "8092"
+      url:  "/api/v1"
+    
+  api:
+    document_papi:
+      url: "https://vems-mule-documents-papi-uat.usg-w1.gov.cloudhub.io/api/s3/objects?key=#1"
+    document_pnm_papi:
+      url: "https://vems-mule-documents-papi-uat.usg-w1.gov.cloudhub.io/api/s3/objects?source=pnm&key=#1"
+      
+  scheduler:
+    sfpnm_to_s3: "0 59 23 ? * * *"
+    sfcore_to_s3: "0 59 23 ? * * *"
+      
+error:
+  cloudhub:
+    environment: "a6b64ee8-b361-482e-ad15-369c276ee7de"

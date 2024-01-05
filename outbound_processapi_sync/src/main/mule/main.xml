@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module"
+	xmlns:compression="http://www.mulesoft.org/schema/mule/compression"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<xml-module:config name="xmlConfig"
+		doc:name="XML Config" doc:id="f569260e-acaf-4145-8b05-b04e89d5269d"
+		expandEntities="ALL"/>
+	<sub-flow name="main-upload-object-to-s3-and-create-s3document-flow" doc:id="37b7f8a0-f58b-4c9c-b95a-dd81482c3eff" >
+		<try doc:name="Try" doc:id="787b82b9-519b-4234-884d-7a20c55d1b29" >
+			<set-variable value="#[%dw 2.0&#10;&#10;var key = vars.esrID default '' ++ &quot;.xml&quot;&#10;var param = Mule::p('app.outbound.url')&#10;var size = sizeOf(write(payload, 'application/xml'))&#10;&#10;output application/json&#10;---&#10;{&#10; &quot;esr&quot;: vars.esrID,&#10; &quot;documentURL&quot;: param replace /#1/ with key,&#10; &quot;documentSize&quot;: size,&#10; &quot;eventType&quot;: &quot;Outbound Event&quot;&#10;}]" doc:name="Set s3DocumentPayload" doc:id="44a37ad3-f079-4cfa-91ea-4a76016deb98" variableName="s3DocumentPayload" />
+			<flow-ref doc:name="post-xml-event-to-aws-sapi-flow" doc:id="15ed6461-dafc-4acc-bc4c-ccf3a7ccbfcd" name="post-xml-event-to-aws-sapi-flow" />
+			<set-payload value="#[vars.s3DocumentPayload]" doc:name="Set Payload" doc:id="6120698a-7042-478a-8c7e-44d1650f34f9" />
+			<flow-ref doc:name="request-post-s3document-sfcore-sapi-flow" doc:id="5aaba7fa-455d-4059-a999-b13cd85292ce" name="request-post-s3document-sfcore-sapi-flow"/>
+			<json-logger:logger doc:name="Log S3 Document Response" doc:id="3dcbd751-012a-401f-9029-d45ad98c6db3" config-ref="jsonLoggerConfig" message="S3 DOCUMENT RESPONSE"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4759f0a9-d448-4254-aa1a-50ccd69e82c8" >
+					<json-logger:logger doc:name="LOG XML PAYLOAD PERSISTING ERROR" doc:id="5890e3d8-39a2-4d68-8f99-664a24e24643" config-ref="jsonLoggerConfig" message="S3 OBJECT REGISTER EXCEPTION" tracePoint="EXCEPTION" priority="ERROR" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<sub-flow name="main-register-log-entry-flow" doc:id="8959aa6e-1981-4548-9f61-9c283e1493d9" >
+		<try doc:name="Try" doc:id="e124616e-189b-4940-88ee-6af3d89a9cfc" >
+			<set-variable value="#[payload]" doc:name="Set errorPayload" doc:id="11812ee3-616b-43d1-b263-018f9d17a205" variableName="errorPayload" />
+			<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	transactionId: correlationId&#10;}]" doc:name="Set Payload" doc:id="ae34e179-487d-4cf5-b324-8fe61302ee5e" />
+			<flow-ref doc:name="request-post-log-sfcore-sapi-flow" doc:id="c2b239f1-115a-4b62-8358-bb436627d6ca" name="request-post-log-sfcore-sapi-flow" />
+			<json-logger:logger doc:name="Log Error" doc:id="129112c1-ce43-4bce-8a30-55b7cd4bcd0c" config-ref="jsonLoggerConfig" message="LOG Payload" tracePoint="AFTER_REQUEST"/>
+			<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	transactionId: payload.recordId,&#10;	message: vars.errorPayload.message,&#10;	exceptionMessage: vars.errorPayload.exceptionMessage,&#10;	exceptionStackTrace: vars.errorPayload.exceptionStackTrace&#10;	&#10;}]" doc:name="Set LogEntry Payload" doc:id="a1caee69-d1aa-432f-b40e-1d2e4d7015f0" />
+			<flow-ref doc:name="request-post-logentry-sfcore-sapi-flow" doc:id="ee64f822-8bbc-44b1-b77e-bb401cc2f33e" name="request-post-logentry-sfcore-sapi-flow" />
+			<json-logger:logger doc:name="Log Entry" doc:id="92f6b690-4208-4268-b486-bf6b0189803f" config-ref="jsonLoggerConfig" message="LOG ENTRY Payload" tracePoint="AFTER_REQUEST"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="70709075-bdb6-4d59-9a3e-dc067a7b7c01" >
+					<json-logger:logger doc:name="Log Error on SF Logging Attempt" doc:id="3f08ecca-7341-466c-813b-d49d4c2936c2" config-ref="jsonLoggerConfig" message="ERROR ON TTRYING TO REGISTER ERRORS ON SF CUSTOM OBJECTS"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<sub-flow name="main-validate-schema-flow"
+		doc:id="60ba8221-e0bd-4d6d-8155-a9cabbfb4501">
+		<try doc:name="Try" doc:id="a54a194d-e866-4521-a9e4-8a343f0245f9">
+			<xml-module:validate-schema
+				doc:name="Validate schema"
+				doc:id="a267292d-c4e1-405f-b881-62c1c2a45de6" config-ref="xmlConfig"
+				schemas="#[vars.xmlSchema]">
+			</xml-module:validate-schema>
+			<error-handler>
+				<on-error-propagate enableNotifications="true"
+					logException="true" doc:name="On Error Propagate"
+					doc:id="4ea41164-2633-4bf8-adbd-af87cc015c84"
+					type="XML-MODULE:INVALID_INPUT_XML, XML-MODULE:INVALID_SCHEMA, XML-MODULE:SCHEMA_NOT_FOUND, XML-MODULE:SCHEMA_NOT_HONOURED, XML-MODULE:TRANSFORMATION">
+					<json-logger:logger
+						doc:name="Log XML Validation Error"
+						doc:id="e6257a82-140f-486e-9cff-14cca60fc646"
+						config-ref="jsonLoggerConfig" message="VALIDATION ERROR"
+						tracePoint="EXCEPTION" priority="ERROR">
+						<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(error) 
+}]]]></json-logger:content>
+					</json-logger:logger>
+					<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	message: error.detailedDescription,&#10;	exceptionMessage: write(error.cause, 'application/json') as String,&#10;	exceptionStackTrace: write(error.errorType, 'application/json') as String&#10;}]" doc:name="Set Payload" doc:id="aa894143-4b69-481a-ae90-33a899a7cec6" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<sub-flow name="main-choose-xmlschema-file-by-name-flow"
+		doc:id="438bace5-52b1-4dcd-be12-f5c6f49e768b">
+		<ee:transform doc:name="Transform Message"
+			doc:id="4319bdd1-396d-4f05-86dc-9e138ee51db2">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+
+output application/json
+---
+payload filter ((item, index) -> (item.schema contains vars.schemaName)) map ((item, index) -> {
+	schema: item.schema,
+    xsd: item.xsd
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="main-query-zip-file-schema-flow"
+		doc:id="2f130e30-cac7-4385-bbce-3c305285b04c">
+		<try doc:name="Try" doc:id="38f71bfa-f18c-4c21-b94f-e689f569bfab" >
+			<os:contains doc:name="Contains Schema Version Number" doc:id="0a4e7087-8c86-4c41-997f-8865ecc377ac" key="#[vars.versionNumber]" objectStore="objectStore" target="containsVersionData" />
+			<choice doc:name="Choice" doc:id="92d66ddf-63f7-424b-b760-04173abcb505">
+			<when expression="#[vars.containsVersionData == true]">
+				<os:retrieve doc:name="Retrieve Schema by Version Number" doc:id="aa2747b6-3b10-4dba-9d1d-b4f8ea1b1371" key="#[vars.versionNumber]" objectStore="objectStore">
+				</os:retrieve>
+			</when>
+			<otherwise>
+				<flow-ref doc:name="get-request-schema-master-sfcore-sapi-flow" doc:id="0db57332-cf79-4beb-a9a3-0193941d00d6" name="get-request-schema-master-sfcore-sapi-flow" />
+				<choice doc:name="Choice" doc:id="d55ee196-ee67-4c13-aa39-9ed0051e73c3">
+						<when expression="#[!isEmpty(payload)]">
+							<set-variable value="#[payload[0].id]" doc:name="Set linkedEntityId" doc:id="e3f2133c-74c2-44f6-8ceb-b9f017640406" variableName="linkedEntityId" />
+							<flow-ref doc:name="get-request-content-document-link-sfcore-sapi-flow" doc:id="5f5a58da-316a-423f-a573-787e5ab2e5b5" name="get-request-content-document-link-sfcore-sapi-flow" />
+							<set-variable value="#[payload[0].contentDocumentId]" doc:name="Set contentBodyId" doc:id="f8a2701e-d6c7-4605-a5f5-4fb89050db72" variableName="contentBodyId" />
+							<flow-ref doc:name="get-request-content-version-sapi-flow" doc:id="e7348ea0-f95a-4432-858d-d644dce4da6b" name="get-request-content-version-sapi-flow" />
+							<set-payload value="#[payload[0]]" doc:name="Set Payload" doc:id="8cabb188-5b99-4876-b77a-c331170603f2" />
+							<os:store doc:name="Store" doc:id="3e1bdecf-cd79-40cc-8370-4de9e8524967" key="#[vars.versionNumber]" objectStore="objectStore" />
+						</when>
+						<otherwise >
+							<json-logger:logger doc:name="Log Zip File is missing" doc:id="71c8ec71-b370-4ed7-b52f-a98d2deb9599" config-ref="jsonLoggerConfig" tracePoint="EXCEPTION" priority="ERROR" message="NO ZIP FILE ERROR">
+								<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(vars.versionNumber) 
+}]]]></json-logger:content>
+							</json-logger:logger>
+							<raise-error doc:name="No Zip File Error" doc:id="9bd76782-1e4e-4d13-b918-21890724d1e7" type="OUTBOUND_EVENT:SETUP" description="There is no ZIP file related to the Version Number"/>
+						</otherwise>
+					</choice>
+			</otherwise>
+		</choice>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e9372537-938f-4a1e-afde-d0ec17f93a3a" >
+					<json-logger:logger doc:name="Log Error on SF Content Management Query" doc:id="2bc78c36-b62c-4a83-b928-e6795ba51754" config-ref="jsonLoggerConfig" message="QUERY SCHEMA VERSION BY NUMBER ERROR" tracePoint="EXCEPTION" priority="ERROR"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>
+
+
+	<sub-flow name="main-convert-base64-to-schema-file-flow"
+		doc:id="8adcfd0e-a429-46e5-aa86-7df3d2c68bb4">
+		<try doc:name="Try" doc:id="2a511a7c-2f1c-4328-8e4b-d521a7e5c2c5" >
+			<os:contains doc:name="Contains containsXmlSchemaFileList" doc:id="4e2e2147-dd98-4ad9-aa28-9237317822ab" key="#[vars.schemaName]" objectStore="objectStore" target="containsXmlSchemaFileList" />
+			<choice doc:name="Choice" doc:id="36db5fcc-4ad9-4ecb-8db8-35f5db10206a">
+			<when expression="#[vars.containsXmlSchemaFileList == true]">
+				<os:retrieve doc:name="Retrieve containsXmlSchemaFileList" doc:id="231aed3a-caf5-4f00-bb68-fe8a6dbda2ae" key="#[vars.schemaName]" objectStore="objectStore">
+					<os:default-value><![CDATA[[]]]></os:default-value>
+				</os:retrieve>
+				<json-logger:logger doc:name="Log XML FIle Schema [ZIP]" doc:id="078c3b5a-e814-471b-ac25-ef60f7fa9a96" config-ref="jsonLoggerConfig" tracePoint="FLOW" message="Log schemaName">
+					<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(vars.schemaName) 
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</when>
+			<otherwise>
+				<json-logger:logger doc:name="Log XML FIle Schema [ZIP]" doc:id="09254a1a-f2b6-403e-a365-d4f32159b71c" config-ref="jsonLoggerConfig" message="Log schemaName - CACHE EMPTY" tracePoint="BEFORE_TRANSFORM">
+					<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(vars.schemaName) 
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<validation:is-not-blank-string doc:name="Is not blank base64 content" doc:id="24f95004-0c27-444d-95ef-e8c767846473" config-ref="validationConfig" message="The payload can not be empty or nulll" value="#[payload.versionData]" />
+				<ee:transform doc:name="Transform base64 to bynary stream" doc:id="bc3f93eb-1f88-4ccb-8092-23fbb0660ebb">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+
+import * from dw::core::Binaries
+
+output application/octet-stream
+---
+fromBase64(payload.versionData as String) as Binary]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<json-logger:logger doc:name="Log Before Extract Zip File" doc:id="5ad0f8b5-a05c-4b28-9ae9-c1ea872e063d" config-ref="jsonLoggerConfig" message="Log Before Extract Zip File" tracePoint="BEFORE_TRANSFORM">
+					<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: "OK"
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<compression:extract doc:name="Extract Zip File" doc:id="89683429-bb8c-4d85-9a48-bf4d05220276">
+			<repeatable-in-memory-stream />
+			<compression:extractor>
+				<compression:zip-extractor />
+			</compression:extractor>
+		</compression:extract>
+				<set-variable value="#[payload]" doc:name="Set xmlSchemaFileList" doc:id="bd4792af-ee12-4301-9f5a-4d915fe0a206" variableName="xmlSchemaFileList" />
+				<parallel-foreach doc:name="Parallel For Each" doc:id="15236d32-196d-4e58-8a4f-a84a8a3235c7" collection="#[payload]">
+						<choice doc:name="Choice" doc:id="56eb9092-4e28-49b0-841c-44e9bfcbeaf2">
+				<when expression='#[!((payload pluck $$)[0] endsWith ("/"))]'>
+								<file:write doc:name="Write Schema Files To TEMP dir" doc:id="86586b5e-9c7a-49d6-89e6-da4a5ee00678" config-ref="fileConfig" path="#[vars.versionNumber default '' ++ &quot;/&quot; ++ (payload pluck $$)[0]]">
+						<reconnect count="3" />
+									<file:content><![CDATA[#[%dw 2.0
+
+output application/java
+--- 
+( payload pluck $ )[0]]]]></file:content>
+					</file:write>
+								<json-logger:logger doc:name="Log XML Schema" doc:id="85601d70-e7b6-4861-943d-c943da5d8ebd" config-ref="jsonLoggerConfig" message=" FOR EACH" tracePoint="BEFORE_TRANSFORM" priority="DEBUG">
+						<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload pluck $$
+}]]]></json-logger:content>
+				</json-logger:logger>
+				</when>
+				<otherwise>
+					<json-logger:logger doc:name="Log Skip Dir" doc:id="79107507-fb36-4ba5-8e73-4cd210889cf6" config-ref="jsonLoggerConfig" message="SKIP A DIRECTORY" priority="DEBUG" />
+				</otherwise>
+			</choice>
+					</parallel-foreach>
+					<ee:transform doc:name="Transform Message" doc:id="6070336b-63dc-48cb-9b89-55c72f206b29">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.xmlSchemaFileList pluck(message,property,index) -> {
+	"schema": property,
+	"xsd": message
+}
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<json-logger:logger doc:name="Log End Extract Zip Flow" doc:id="160a14e3-fc7a-46f7-995b-d7cb013fc13d" config-ref="jsonLoggerConfig" message="log-convert-base64-to-schema-file-flow" tracePoint="FLOW">
+					<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: "end-convert-base64-to-schema-file-flow"
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<os:store doc:name="Store xmlSchemaFileList" doc:id="4fe2006a-1369-4157-8dc0-4c7f61df3d10" key="#[vars.schemaName]" objectStore="objectStore" />
+			</otherwise>
+		</choice>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a6987ab0-e261-402a-9cb5-25b5c831106f" >
+					<json-logger:logger doc:name="Log Zip Extraction Error" doc:id="08b58878-9a3b-4ee4-99fe-f1969d069f4a" config-ref="jsonLoggerConfig" message="Zip Extraction Error" tracePoint="EXCEPTION" priority="ERROR"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<flow name="mainFlow" doc:id="482b9513-9f2c-4e54-b3e6-05e9ef088c5b" >
+		<scheduler doc:name="Scheduler" doc:id="10a6bf60-50ae-49e5-a96a-b6194d8c1032" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="currentDate" doc:id="8dd59df8-e15b-419a-abc4-0f827c4cae46" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="currentDate" ><![CDATA[%dw 2.0
+output application/json
+---
+now() as String {format: "y/MM/dd"}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieve OS lastEndDate" doc:id="40860c9e-0887-4969-b9a0-767d8443fd1a" key="PMLastEndDate" objectStore="objectStore" target="lastEndDate" >
+			<os:default-value ><![CDATA[#[vars.currentDate]]]></os:default-value>
+		</os:retrieve>
+		<logger level="INFO" doc:name="Log Current Time - OS" doc:id="0875033b-ef08-4470-9b92-b75cb2f10db8" message='#["OS lastEndDate: "   ++ vars.lastEndDate as String]' />
+		<ee:transform doc:name="set start/End Date" doc:id="a817da9f-5c88-49ee-ae7f-082cec305cf9" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="startDate" ><![CDATA[vars.lastEndDate default vars.currentDate
+]]></ee:set-variable>
+				<ee:set-variable variableName="endDate" ><![CDATA[vars.currentDate
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="4ad7f1a0-8dd2-477e-b7c4-e03f0691951b" config-ref="jsonLoggerConfig" message="Define Date Period execution" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    StartDate: vars.startDate,
+    EndDate: vars.endDate
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<flow-ref doc:name="startOutbountRequestEventUpdateProcess" doc:id="0d2f9656-d44a-41d8-8a14-fc380dd59ff3" name="main-foreach-process-outbound-event-flow" />
+		<os:store doc:name="Store PMLastEndDate" doc:id="dc7b9ccf-3fb1-4d00-8f44-39f709859ba2" key="PMLastEndDate" objectStore="objectStore" >
+			<os:value ><![CDATA[#[vars.currentDate]]]></os:value>
+		</os:store>
+	</flow>
+	<sub-flow name="main-foreach-process-outbound-event-flow" doc:id="5d4b76a5-2372-4fc8-8d99-76254c19d0a2" >
+		<flow-ref doc:name="request-get-outbount-event" doc:id="1f304c7e-22d7-4e08-b41a-6f88e07ef6ed" name="request-query-outbound-event"/>
+		<json-logger:logger doc:name="Logger" doc:id="89f8bc65-281f-4019-ac45-7ea8da80897e" config-ref="jsonLoggerConfig" message="After-Get-request">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<ee:transform doc:name="Transform Message" doc:id="5de1354a-24b6-43c7-badd-6e093d4c434f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="c8863b15-3b05-4233-81ba-b266e573bfa7" >
+			<foreach doc:name="For Each" doc:id="26b13ca0-9b4e-499e-aea7-4253b64921db" collection="#[payload]">
+				<set-variable value="#[payload]" doc:name="payload" doc:id="0d06400b-d9cd-4b17-bead-28341a6261f5" variableName="paylaod"/>
+				<set-variable value="#[payload.Id]" doc:name="id" doc:id="2abcf3c0-b202-4a7a-8afb-727ee505ff10" variableName="Id"/>
+				<set-variable value="#[payload.PEJson__c]" doc:name="json" doc:id="40bfa9e1-a989-43de-9330-8c1b36193a06" variableName="json"/>
+				<choice doc:name="Choice" doc:id="9cfb648c-a208-4868-abf8-06c619ff2c57" >
+					<when expression='#[payload.PEJson__c contains  "xsi:schemaLocation"]'>
+						<set-payload value="#[%dw 2.0&#10;&#10;var jsonPayload = read(payload.PEJson__c, 'application/json')&#10;&#10;output application/json&#10;---&#10;jsonPayload]" doc:name="Set Payload" doc:id="92e6c1ec-bedd-4926-917d-9358857e98d2" />
+						<flow-ref doc:name="main-process-outbound-event" doc:id="5bd6cc6a-7b19-4d09-954b-388efdd27cfb" name="main-process-outbound-request-event-flow" />
+						<ee:transform doc:name="Transform Message" doc:id="be9f3d85-bf28-4ad7-8132-28d60265b97f">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+						<ee:transform doc:name="Transform Message" doc:id="4ad94194-72b5-4587-a3be-8b10d52673df">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+        "Id": vars.id,
+        "Status__c": "SentToVA"
+ } 
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+						<json-logger:logger doc:name="Logger" doc:id="34199ba4-eebe-43dd-b800-0c59ed5d81d6" config-ref="jsonLoggerConfig" message="PayloadUpdateStatus" tracePoint="AFTER_TRANSFORM"/>
+						<flow-ref doc:name="request-update-outboundStatus" doc:id="40dfc6a5-1217-4aea-b828-525c1e1e1f12" name="request-updateStatus-outbound-event" />
+						<json-logger:logger doc:name="Logger" doc:id="0dcb1f2d-6618-46f7-a506-302c87deb32f" config-ref="jsonLoggerConfig" message="UpdatedStatus" tracePoint="END"/>
+					</when>
+					<otherwise >
+						<json-logger:logger doc:name="Logger" doc:id="f9a609b6-962c-4d32-962b-782efa2a3e68" config-ref="jsonLoggerConfig" message="Ignore register" tracePoint="EXCEPTION">
+							<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload.EventId__c) 
+}]]]></json-logger:content>
+						</json-logger:logger>
+					</otherwise>
+				</choice>
+			</foreach>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="d33678da-cd83-44ea-9ad8-6dafb105ab7e" type="ANY" >
+					<json-logger:logger doc:name="Logger" doc:id="5e2c8c24-0b6d-4437-90f6-fdd69bb53a32" config-ref="jsonLoggerConfig" message="Upload Document Process" />
+					<ee:transform doc:name="Transform Message" doc:id="ccc5e1fd-9543-452e-a09b-68ea8c15e25b" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<sub-flow name="main-process-outbound-request-event-flow"
+		doc:id="a2599794-51a0-4c96-a65d-76374ab7d2d5">
+		<json-logger:logger doc:name="Log JSON Payload" doc:id="6533150b-ef18-4c68-945f-4370abeece48" config-ref="jsonLoggerConfig" message="JSON PAYLOAD" tracePoint="AFTER_TRANSFORM" />
+		<set-variable value="#[payload]" doc:name="Set originalPayload" doc:id="304468ee-92c5-43eb-9d17-57058b3ab8a7" variableName="originalPayload" />
+		<set-variable value="#[payload..*modelVersion[0]]" doc:name="Set versionNumber" doc:id="5345e1d0-2e36-4bf3-8a01-8b9726fecf8d" variableName="versionNumber" />
+		<set-variable value='#[%dw 2.0&#10;&#10;var arrSchema = payload.."xsi:schemaLocation"[0] splitBy /\//&#10;&#10;---&#10;arrSchema[-1]]' doc:name="Set Schema Name" doc:id="8767368d-5cc4-4fef-885a-23dd6b3490b4" variableName="schemaName" />
+		<ee:transform doc:name="JSON to XML Transformation" doc:id="8ce3b8a3-c550-409b-af8d-ff7ab88dc643" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[import dw::module::OutboundEventUtil
+output application/xml
+
+var result = OutboundEventUtil::mapAttributes(payload)
+---
+result]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Log XML Payload" doc:id="1b83278a-49a2-4e85-a1c0-c31036eaf1db" config-ref="jsonLoggerConfig" message="XML PAYLOAD" tracePoint="AFTER_TRANSFORM"/>
+		<set-variable value="#[payload]" doc:name="Set xmlPayload" doc:id="64ab7dba-edfe-4628-8833-1f17d2679c5f" variableName="xmlPayload"/>
+		<choice doc:name="Choice" doc:id="502b763b-14db-41a2-9236-1abe7145b93a">
+			<when expression="#[vars.versionNumber != null]">
+				<flow-ref doc:name="main-query-zip-file-schema-flow" doc:id="0d002ad0-9a60-49c1-80fc-176d6078731b" name="main-query-zip-file-schema-flow" />
+				<json-logger:logger doc:name="Log Schema SF stored" doc:id="f26f134f-37f7-4c9e-bc35-8f564fb1c87e" config-ref="jsonLoggerConfig" message="LOG ZIP VERSION BASE 64" >
+					<json-logger:content ><![CDATA[#[%dw 2.0
+
+output application/json 
+---
+payload - "versionData"]]]></json-logger:content>
+				</json-logger:logger>
+				<flow-ref doc:name="main-convert-base64-to-schema-file-flow" doc:id="d000f13c-e33e-4e36-8c57-91a56ed76c64" name="main-convert-base64-to-schema-file-flow" />
+				<json-logger:logger doc:name="Log XML Schema ZIP " doc:id="bad1b1df-6444-44d4-b00f-25baa8ee886d" config-ref="jsonLoggerConfig" message="XML Schemas" tracePoint="AFTER_TRANSFORM">
+					<json-logger:content><![CDATA[#[output application/json 
+---
+{
+    payload: sizeOf(payload) 
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<flow-ref doc:name="main-choose-xmlschema-file-by-name-flow" doc:id="3179e776-30d6-4e42-9939-4b9c5127aef6" name="main-choose-xmlschema-file-by-name-flow" />
+				<json-logger:logger doc:name="Log Schema Name" doc:id="84c3919f-a18d-4659-b495-b99d8c9ac175" config-ref="jsonLoggerConfig" message="LOG SCHEMA NAME">
+					<json-logger:content><![CDATA[#[output application/json 
+---
+{
+    payload: vars.schemaName 
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<set-variable value="#[%dw 2.0&#10;&#10;var tmpPath = Mule::p(&quot;app.sfcore.tempDir&quot;) default &quot;/tmp/&quot;&#10;var filePath = tmpPath as String ++ vars.versionNumber default '' as String ++ &quot;/&quot; ++ payload[0].schema as String&#10;&#10;output text&#10;---&#10;filePath]" doc:name="Set xmlSchema" doc:id="04be060f-ca1c-40dc-baf2-927cbf976cd6" variableName="xmlSchema" mimeType="text/plain" />
+				<try doc:name="Try" doc:id="6c1522dd-4d88-4496-b2df-a22fd09e9071">
+					<set-payload value="#[vars.xmlPayload]" doc:name="Set xmlPayload" doc:id="b172ea90-8826-4ca7-ab69-4e028458a1cf" />
+					<json-logger:logger doc:name="Log Validation Schema Attempt" doc:id="afc85d14-37fd-4e29-94b1-e07765e0c647" config-ref="jsonLoggerConfig" message="VALIDATION OF SCHEMA" />
+					<flow-ref doc:name="main-validate-schema-flow" doc:id="4fb9aea8-274a-4edd-8754-5b3d6e06ae5d" name="main-validate-schema-flow"/>
+					<error-handler>
+						<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="68d58dcc-82e0-40a5-959d-b7d9cd8b68f5">
+							<json-logger:logger doc:name="Log EXCEPTION VALIDATION FLOW" doc:id="7c38bae7-ebcb-4bca-a83f-10de96e2599a" config-ref="jsonLoggerConfig" message="CALLING THE ERROR LOGGING FLOW" tracePoint="EXCEPTION" />
+							<flow-ref doc:name="main-register-log-entry-flow" doc:id="f5661877-f666-4dfc-bd59-56ea19006a66" name="main-register-log-entry-flow" />
+						</on-error-propagate>
+					</error-handler>
+				</try>
+				<flow-ref doc:name="main-post-event-to-xmlgateway-sapi-main" doc:id="c8b20446-55e3-42b0-b89d-3aefc69b4845" name="main-post-event-to-xmlgateway-sapi-main"/>
+				<flow-ref doc:name="main-upload-object-to-s3-and-create-s3document-flow" doc:id="39a5e144-8e02-4731-befc-fa0d008db9b9" name="main-upload-object-to-s3-and-create-s3document-flow" targetValue="#[vars.xmlPayload]"/>
+				<json-logger:logger doc:name="Log END OF FLOW" doc:id="b5f7658b-9b99-4ddd-87f4-4c1eb695f6b4" config-ref="jsonLoggerConfig" message="FLOW WAS COMPLETED SUCCESSFULLY" tracePoint="END" />
+			</when>
+			<otherwise>
+				<json-logger:logger doc:name="Log Version Number Error" doc:id="0f7f05eb-05cd-4d2d-ade5-e6da73636925" config-ref="jsonLoggerConfig" message="SCHEMA VERSION NUMBER ERROR" tracePoint="END" priority="ERROR" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+
+
+</mule>

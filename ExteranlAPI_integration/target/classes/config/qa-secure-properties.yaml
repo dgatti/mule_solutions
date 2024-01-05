@@ -1,0 +1,22 @@
+https:
+  keyPass: "![LMwU9lU49ETVhX81ziCo4w==]"
+
+
+app:  
+  sapi:
+    credentials:
+      clientId: "![R4JlXwbQDn1tNeuUB9t/y9YYyRdKOikOoxTyyRVOFRT1MzLu0rfp6g==]"
+      clientSecret: "![rR5HLA+StUW2H7ZAsyS26M5pY2JOX4pMRVifWfunsd7qxgZagcWtLg==]"
+      
+practiceMatch:
+  #securitytoken: "![J7DFLDTzif1+ZUFR5qiTe9mflopjJy1lhTTysgJAMuFyqBwXybmpnA==]"
+  securitytoken: "![htmLgC5PFtfC4jDp2/ttsDayLa/KTE5r2yNe6Ah/04lnjoUMoWATQQ==]"
+
+
+error:
+  sfcoresapi:
+    client_id: "![l5lhPi282s0Ogb6YlYBARIg88yjTaZrZIwTUedEorH1zHMV8G3G2EA==]"
+    client_secret: "![OCzpxM9WwQuXZHc5QiE8BXaKXQqO2w9LgwZzJGZ17o8a+vjnrHp/2Q==]"
+  cloudhub:
+    client_id: "![+NkGJxD1W5ojRUWrl1sza3ExTyBMhwLn6AK5IvD0ngsZnXXM387ebg==]"
+    client_secret: "![Yx00T6vkQE2w6ys1y58gR1wsgkIDdpDSpVNIHsDR3dmyckFVzNMPNQ==]"

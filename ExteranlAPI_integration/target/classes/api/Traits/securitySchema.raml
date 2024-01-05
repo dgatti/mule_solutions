@@ -1,0 +1,29 @@
+#%RAML 1.0 Trait
+securitySchemes:
+  oauth2-required:
+    description: OAuth 2.0 authentication
+    type: OAuth 2.0
+    describedBy:
+      headers:
+        Authorization:
+          required: true
+          description: Used to send a valid OAuth 2 access token
+          type: string
+
+  client-id-required:
+    description: Client ID & secret enforcement
+    type: client-id-required
+    describedBy:
+      headers:
+        client_id:
+          required: true
+          description: Client ID
+          type: string
+        client_secret:
+          required: true
+          description: Client secret
+          type: string
+          
+        ##Security Token
+          ##type: string
+          ##example: EA9CD9A9-ED82-4326-ADBF-2C59A1E90241

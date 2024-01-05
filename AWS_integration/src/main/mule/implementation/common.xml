@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="prepare-file-output" doc:id="ecd85a2a-967d-49de-acba-03ef0887e1cd" >
+		<set-variable value="#[%dw 2.0&#xA;&#xA;var fileName = vars.s3ObjectKey splitBy(/[\/]/)&#xA;var responseName = fileName[-1]&#xA;&#xA;output json&#xA;---&#xA;{&#xA; &quot;Content-Disposition&quot;: &quot;attachment; filename=&quot; ++ responseName&#xA; &#xA;}]" doc:name="Set outboundHeaders" doc:id="ac735485-5399-4848-b379-0fb0c998969b" variableName="outboundHeaders" />
+		<ee:transform doc:name="Build Output as Octet" doc:id="ee49b76e-94e6-4791-8815-1651bfb69aab">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+
+output application/octet-stream
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+	</sub-flow>
+	<sub-flow name="validate-prepare-file" doc:id="0978bbe2-7ff8-44bd-8a63-2a58852c3e70" >
+		<set-variable value="#[message.attributes.headers['Content-Length']]" doc:name="Set fileSize" doc:id="b8b8b2bb-e68a-4ba1-bbc9-10ad544d375b" variableName="fileSize"/>
+		<validation:validate-size doc:name="Validate File Size" doc:id="7ab11085-41e0-4476-a7eb-ec96b18fb95d" config-ref="Validation_Config" value="#[vars.fileSize]" max='${files.maxSize}' message="#[&quot;The file size ($(vars.fileSize default 0)) is larger than max size ($(p('files.maxSize')))&quot;]" />
+		<set-variable doc:name="Set s3 Key" doc:id="4db0db0e-8123-4863-8284-856a9f21ce8e" variableName="s3ObjectKey" value="#[%dw 2.0&#10;output application/json&#10;---&#10; payload.parts.directory.content ++ '/' ++ payload.parts.file.headers.'Content-Disposition'.filename]" />
+		<set-payload value="#[payload.parts.file.content]" doc:name="Set file content" doc:id="b385c1fd-5a19-4007-a1a5-3b9ad6e49d9c" />
+	</sub-flow>
+</mule>

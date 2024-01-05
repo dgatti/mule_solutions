@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<sub-flow name="set-request-sapi-headers-client-id-client-secret" doc:id="07bbe8fb-7adf-4c45-b338-d283fe6fe5a5" >
+		<set-variable value="#[%dw 2.0&#10;&#10;output json&#10;---&#10;{&#10;	&quot;client_secret&quot; : Mule::p('secure::app.sapi.credentials.clientSecret'),&#10;	&quot;client_id&quot; : Mule::p('secure::app.sapi.credentials.clientId')&#10;}]" doc:name="Set Headers" doc:id="d70277d0-94b9-4c0b-a0ab-4cd67804f0d9" variableName="requestSapiHeaders" />
+	</sub-flow>
+	</mule>

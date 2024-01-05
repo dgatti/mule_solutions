@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="salesforce-clarification-request-event-listener-flow"
+		doc:id="ba94d87d-b894-435f-b24c-2a3483ebebe6">
+		<salesforce:replay-channel-listener
+			doc:name="PE Clarification Request Event"
+			doc:id="5957208a-138c-4d85-ac03-52d0acbfeb3d"
+			config-ref="salesforceConfig" replayOption="ONLY_NEW"
+			streamingChannel="${app.salesforce.cloud.event.listener.channel.name}"
+			autoReplay="true">
+			<reconnect count="4"/>
+		</salesforce:replay-channel-listener>
+		<json-logger:logger doc:name="Log New Event"
+			doc:id="45031de3-a0a2-4b5f-8724-8477dbcc8688"
+			config-ref="jsonLoggerConfig"
+			message="NEW CLARIFICATION REQUEST EVENT">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    eventPayload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable
+			value="#[payload.data.payload.esrRecordId__c default null]"
+			doc:name="Set esrID" doc:id="cf4701c3-de41-46aa-a633-30d1d78d7ba0"
+			variableName="esrID"/>
+		<try doc:name="Try" doc:id="ba67a66e-baa1-47f1-8a54-e227b6d1a54b">
+			<flow-ref doc:name="Flow Reference" doc:id="edc7f464-424e-445c-a415-0c81ae433593" name="request-get-caseNumber" />
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e6c7be90-ad45-40e0-a91f-97f366c305fd">
+					<json-logger:logger doc:name="Logger" doc:id="b6939f1d-302d-4b86-af40-b8378e27e030" config-ref="jsonLoggerConfig" message="EmptyValue" tracePoint="AFTER_REQUEST" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<set-variable value="#[payload.casenumber]" doc:name="caseNumber" doc:id="055a70cc-26d1-4027-aec4-1b86ebfe5833" variableName="caseNumber"/>
+		<set-variable value="#[payload.data.event.EventApiName]" doc:name="eventType" doc:id="24ac82aa-b509-46c6-bf2a-b0b87a1815a2" variableName="eventType"/>
+		<set-variable value="#[payload.data.payload.JSON__c]" doc:name="json_c" doc:id="a71928e6-f78d-4e2d-b65e-c937ef01d2a4" variableName="json_c"/>
+		<ee:transform doc:name="Mapping to OutboundEventSnapshot" doc:id="328278c4-d9a3-4e8d-a696-2c0a1ca51679" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var jsonC = read (vars.json_c, "application/json")
+//var jsonC = vars.json
+---
+{
+	"ExamAppointmentId__c": jsonC.ExamManagementEventNotification.ClarificationRequestEvent.attributes.examAppointmentUuid default '',
+    "ExamContentionId__c": jsonC.ExamManagementEventNotification.ClarificationRequestEvent.ExamRelatedContentionUuids.UuidValue default '',
+	"EventId__c": jsonC.ExamManagementEventNotification.ClarificationRequestEvent.attributes.eventUuid default '',
+	//"ExamSchedulingRequestId__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.examSchedulingRequestUuid,
+	"ExamSchedulingRequestId__c": vars.esrID,
+	"PreviousEvent__c": jsonC.ExamManagementEventNotification.ClarificationRequestEvent.attributes.previousEventUuid default '',
+	"EventType__c": vars.eventType,
+	"EventDtg__c": jsonC.ExamManagementEventNotification.ClarificationRequestEvent.attributes.eventDtg default '',
+	"PEJson__c": vars.json_c,
+	"ModelVersion__c": jsonC.ExamManagementEventNotification.ClarificationRequestEvent.attributes.modelVersion default '',
+	"Case__c": vars.casenumber default '',
+	"SkipValidation__c": false,
+	"Status__c": "ReadyToSend"		
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="b0ca4eb5-9f0d-4c47-a7f4-fbc15a41332c" config-ref="jsonLoggerConfig" message="Payload" tracePoint="AFTER_TRANSFORM"/>
+		<flow-ref doc:name="main-process-outbound-request-event-flow" doc:id="c2d5cbc5-1ebe-47c4-b130-6e2b3f49b02b" name="request-create-outbound-event" />
+		<json-logger:logger doc:name="Logger" doc:id="30a5e5be-a9da-452d-ac38-52038062c490" config-ref="jsonLoggerConfig" message="End Process" tracePoint="END"/>
+		<error-handler ref="event-error-handler" />
+	</flow>
+	
+	
+	<flow name="salesforce-core-appointment-scheduled-listener-flow"
+		doc:id="58083a02-685b-443a-9291-cb1bb4a8f70b">
+<salesforce:replay-channel-listener streamingChannel="${app.salesforce.cloud.event.appointmentScheduled.channel.name}" replayOption="ONLY_NEW" doc:name="PE - Service Appointment Event" doc:id="35ae4627-1f45-48e6-8929-f29fb7b0c53d" config-ref="salesforceConfig" autoReplay="true" >
+			<reconnect count="4" />
+		</salesforce:replay-channel-listener>
+		<json-logger:logger
+			doc:name="Log SERVICE APPOINTMENT EVENT PAYLOAD"
+			doc:id="9337f55d-a038-4d8b-892b-f8cf1ad31e1f"
+			config-ref="jsonLoggerConfig"
+			message="SERVICE APPOINTMENT EVENT PAYLOAD"
+			tracePoint="BEFORE_TRANSFORM">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    eventPayload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable
+			value="#[payload.data.payload.ESR_Id__c default null]"
+			doc:name="Set esrID" doc:id="9e8d006f-e2df-4682-b8d4-a002447c6624"
+			variableName="esrID"/>
+		<try doc:name="Try" doc:id="0a7d62de-4414-4df8-81e1-46f94eeb812a" >
+			<flow-ref doc:name="Flow Reference" doc:id="09a2c6b5-b59b-40e2-bca0-1401df5e2f23" name="request-get-caseNumber" />
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ffd33338-edc3-4791-bb7d-38d25ad48b44" >
+					<json-logger:logger doc:name="Logger" doc:id="dd25f47c-8f5a-405e-b580-98a002890f38" config-ref="jsonLoggerConfig" message="EmptyValue" tracePoint="AFTER_REQUEST"/>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<set-variable value="#[payload.casenumber]" doc:name="caseNumber" doc:id="cd898cf9-0edf-449d-a756-01fc19f81a39" variableName="caseNumber" />
+		<set-variable value="#[payload.data.event.EventApiName]" doc:name="eventType" doc:id="b29a5417-6ed7-475f-8dd0-948909a94dc7" variableName="eventType" />
+		<set-variable value="#[payload.data.payload.JSON__c]" doc:name="json_c" doc:id="71f91002-5ed3-414e-a9b3-e9e6cbc9ea83" variableName="json_c" />
+		<ee:transform doc:name="Mapping to OutboundEventSnapshot" doc:id="2c0fe6c1-4bc9-407f-ac8e-1b206977f61a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var jsonC = read (vars.json_c, "application/json")
+//var jsonC = payload
+---
+{
+	"ExamAppointmentId__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.examAppointmentUuid  default '',
+    "ExamContentionId__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.ExamRelatedContentionUuids.UuidValue default '',
+	"EventId__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.eventUuid default '',
+	//"ExamSchedulingRequestId__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.examSchedulingRequestUuid,
+	"ExamSchedulingRequestId__c": vars.esrID,
+	"PreviousEvent__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.previousEventUuid default '',
+	"EventType__c": vars.eventType,
+	"EventDtg__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.eventDtg default '',
+	"PEJson__c": vars.json_c,
+	"ModelVersion__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.modelVersion default '',
+	"Case__c": vars.casenumber default '',
+	"SkipValidation__c": false,
+	"Status__c": "ReadyToSend"	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="ba84e2c0-7c61-45af-85f7-3110b0126939" config-ref="jsonLoggerConfig" message="Payload" tracePoint="AFTER_TRANSFORM" />
+		<flow-ref
+			doc:name="main-process-outbound-request-event-flow"
+			doc:id="b397281d-e6bb-440e-bc29-b8e520af24a9"
+			name="request-create-outbound-event"/>
+		<json-logger:logger doc:name="Logger1" doc:id="1af32b0c-9698-4ea7-8e5a-eecacd823e5e" config-ref="jsonLoggerConfig" message="End Process" tracePoint="END" />
+		<error-handler ref="event-error-handler" />
+
+	</flow>
+
+
+	<flow name="salesforce-core-contention-cancelation-listener-flow"
+		doc:id="17a259d5-ceaa-43d5-8a0d-8e84e9242adf">
+		<salesforce:replay-channel-listener
+			streamingChannel="${app.salesforce.cloud.event.contentionCancelation.channel.name}"
+			replayOption="ONLY_NEW"
+			doc:name="SF Core Contention Cancelation listener"
+			doc:id="b885e94e-6e0f-47a4-8380-daaaffb4249a"
+			config-ref="salesforceConfig">
+			<reconnect count="4"/>
+		</salesforce:replay-channel-listener>
+		<json-logger:logger
+			doc:name="Log Platform Event Payload"
+			doc:id="ca1e5c67-d67a-4aab-b859-aceec5b37380"
+			config-ref="jsonLoggerConfig" message="NEW PLATFORM EVENT"
+			tracePoint="BEFORE_TRANSFORM">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    eventPayload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable
+			value="#[payload.data.payload.esrRecordId__c default null]"
+			doc:name="Set esrID" doc:id="60ff288c-7efc-4041-9075-70fa651a237c"
+			variableName="esrID"/>
+		<try doc:name="Try" doc:id="87bc3e15-9ded-4247-9cf9-c7be642e119e">
+			<flow-ref doc:name="Flow Reference" doc:id="99871126-ab5f-4a8e-bc3f-2e20f38887ff" name="request-get-caseNumber" />
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="70ff8afb-0446-4e37-9f00-4a0bb21efd6a">
+					<json-logger:logger doc:name="Logger" doc:id="d5fc556f-fee8-4b97-99b3-fa686435753c" config-ref="jsonLoggerConfig" message="EmptyValue" tracePoint="AFTER_REQUEST" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<set-variable value="#[payload.casenumber]" doc:name="caseNumber" doc:id="0c392a49-e82f-4537-b35a-60372544ec93" variableName="caseNumber" />
+		<set-variable value="#[payload.data.event.EventApiName]" doc:name="eventType" doc:id="28d49acb-b806-4a1e-840f-b6b2b2ef964e" variableName="eventType" />
+		<set-variable value="#[payload.data.payload.JSON__c]" doc:name="json_c" doc:id="63c1134e-c6d0-41d6-a492-dd4473ec306a" variableName="json_c" />
+		<ee:transform doc:name="Mapping to OutboundEventSnapshot" doc:id="5b9a253f-2cde-4077-b25d-fd12fff42647">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var jsonC = read (vars.json_c, "application/json")
+//var jsonC = payload
+---
+{
+	"ExamContentionId__c": jsonC.ExamManagementEventNotification.ContentionCancellationRequestedEvent.attributes.examRelatedContentionUuid default '',
+	"EventId__c": jsonC.ExamManagementEventNotification.ContentionCancellationRequestedEvent.attributes.eventUuid default '',
+	//"ExamSchedulingRequestId__c": jsonC.ExamManagementEventNotification.ContentionCancellationRequestedEvent.attributes.examSchedulingRequestUuid,
+	"ExamSchedulingRequestId__c": vars.esrID,
+	"PreviousEvent__c": jsonC.ExamManagementEventNotification.ContentionCancellationRequestedEvent.attributes.previousEventUuid default '',
+	"EventType__c": vars.eventType,
+	"EventDtg__c": jsonC.ExamManagementEventNotification.ContentionCancellationRequestedEvent.attributes.eventDtg default '',
+	"PEJson__c": vars.json_c,
+	"ModelVersion__c": jsonC.ExamManagementEventNotification.ContentionCancellationRequestedEvent.attributes.modelVersion default '',
+	"Case__c": vars.casenumber default '',
+	"SkipValidation__c": false,
+	"Status__c": "ReadyToSend"	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="1ea3f9e1-3fb2-405e-861e-22558dc9a755" config-ref="jsonLoggerConfig" message="Payload" tracePoint="AFTER_TRANSFORM" />
+		<flow-ref
+			doc:name="main-process-outbound-request-event-flow"
+			doc:id="bb04341a-4058-4f5b-831b-8fcf45624089"
+			name="request-create-outbound-event"/>
+		<json-logger:logger doc:name="Logger1" doc:id="b8d84e4b-99df-47c9-89c7-4eb14d519331" config-ref="jsonLoggerConfig" message="End Process" tracePoint="END" />
+		<error-handler ref="event-error-handler" />
+	</flow>
+	
+	
+	<flow name="salesforce-core-appointment-canceled-listener-flow"
+		doc:id="4e135fad-e375-461d-abfa-3eddf2af79d5">
+		<salesforce:replay-channel-listener
+			streamingChannel="${app.salesforce.cloud.event.appointmentCanceled.channel.name}"
+			replayOption="ONLY_NEW"
+			doc:name="SF Core Contention Cancelation listener"
+			doc:id="ef0fcdc5-89f6-4281-afb5-a7f029a39859"
+			config-ref="salesforceConfig">
+			<reconnect count="4"/>
+		</salesforce:replay-channel-listener>
+		<json-logger:logger
+			doc:name="Log Platform Event Payload"
+			doc:id="f1e707f9-7308-425c-ae89-e9b037186e61"
+			config-ref="jsonLoggerConfig" message="NEW PLATFORM EVENT"
+			tracePoint="BEFORE_TRANSFORM">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    eventPayload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable
+			value="#[payload.data.payload.esrRecordId__c default null]"
+			doc:name="Set esrID" doc:id="8d09b346-0fda-4984-9b55-545542e2bd35"
+			variableName="esrID"/>
+		<try doc:name="Try" doc:id="db7aac48-ebc8-413d-80f1-8be09ab86f9c">
+			<flow-ref doc:name="Flow Reference" doc:id="939736e7-eb19-42b5-a8f9-a45b64a17fca" name="request-get-caseNumber" />
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9e8caadd-84ed-4ec1-abd2-4ab71ae51eae">
+					<json-logger:logger doc:name="Logger" doc:id="f4095379-0fcb-4ef2-8c30-e8333a66877f" config-ref="jsonLoggerConfig" message="EmptyValue" tracePoint="AFTER_REQUEST" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<set-variable value="#[payload.casenumber]" doc:name="caseNumber" doc:id="eee77144-363a-48b3-89c8-8c5377f6aed1" variableName="caseNumber" />
+		<set-variable value="#[payload.data.event.EventApiName]" doc:name="eventType" doc:id="368bcc7a-90c2-4ba0-bb40-a3f06ff0ff9b" variableName="eventType" />
+		<set-variable value="#[payload.data.payload.JSON__c]" doc:name="json_c" doc:id="c450c5bb-31fd-4224-a89c-acc2654f71e9" variableName="json_c" />
+		<ee:transform doc:name="Mapping to OutboundEventSnapshot" doc:id="4596e299-3bdf-4ba7-802f-662fa233be34">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var jsonC = read (vars.json_c, "application/json")
+//var jsonC = payload
+---
+{
+	"ExamAppointmentId__c": jsonC.ExamManagementEventNotification.AppointmentCanceledEvent.attributes.examAppointmentUuid default '',
+	"EventId__c": jsonC.ExamManagementEventNotification.AppointmentCanceledEvent.attributes.eventUuid default '',
+	//"ExamSchedulingRequestId__c": jsonC.ExamManagementEventNotification.AppointmentCanceledEvent.attributes.examSchedulingRequestUuid,
+	"ExamSchedulingRequestId__c": vars.esrID,
+	"PreviousEvent__c": jsonC.ExamManagementEventNotification.AppointmentCanceledEvent.attributes.previousEventUuid default '',
+	"EventType__c": vars.eventType default '',
+	"EventDtg__c": jsonC.ExamManagementEventNotification.AppointmentCanceledEvent.attributes.eventDtg default '',
+	"PEJson__c": vars.json_c default '',
+	"ModelVersion__c": jsonC.ExamManagementEventNotification.AppointmentCanceledEvent.attributes.modelVersion default '',
+	"Case__c": vars.casenumber default '',
+	"SkipValidation__c": false,
+	"Status__c": "ReadyToSend"	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="42c88cdf-2e3f-4d5f-8ab6-fd283d30f9c6" config-ref="jsonLoggerConfig" message="Payload" tracePoint="AFTER_TRANSFORM" />
+		<flow-ref
+			doc:name="main-process-outbound-request-event-flow"
+			doc:id="3f805724-ea90-4c13-848c-a519a795c7d8"
+			name="request-create-outbound-event"/>
+		<json-logger:logger doc:name="Logger1" doc:id="1a16a3f8-5373-45ca-ae1a-f7659389b444" config-ref="jsonLoggerConfig" message="End Process" tracePoint="END" />
+		<error-handler ref="event-error-handler" />
+	</flow>
+	
+	
+	<flow name="salesforce-core-appointment-completed-listener-flow"
+		doc:id="f9e8c56c-7e70-4c33-9b1c-f45b0a361467">
+		<salesforce:replay-channel-listener
+			streamingChannel="${app.salesforce.cloud.event.appointmentCompleted.channel.name}"
+			replayOption="ONLY_NEW"
+			doc:name="SF Core Appointment Completed listener"
+			doc:id="ece18ed5-1129-4977-9550-40bbdb3d0abc"
+			config-ref="salesforceConfig">
+			<reconnect count="4"/>
+		</salesforce:replay-channel-listener>
+		<json-logger:logger
+			doc:name="Log Platform Event Payload"
+			doc:id="ed2fd3f6-79bb-4276-92a3-f9db29c73d0c"
+			config-ref="jsonLoggerConfig" message="NEW PLATFORM EVENT"
+			tracePoint="BEFORE_TRANSFORM">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    eventPayload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable
+			value="#[payload.data.payload.esrRecordId__c default null]"
+			doc:name="Set esrID" doc:id="d65db41e-03d8-4d44-958e-df5f3e1157d3"
+			variableName="esrID"/>
+		<try doc:name="Try" doc:id="c2beaee6-5bd3-4c4d-b96b-1c8a797e64f4">
+			<flow-ref doc:name="Flow Reference" doc:id="d2928cb8-caa6-437f-88a4-9027071745bf" name="request-get-caseNumber" />
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="911af627-2247-4d4e-9efe-0008c310f9cb">
+					<json-logger:logger doc:name="Logger" doc:id="000542f9-231c-4cde-a08b-d6f347f884c5" config-ref="jsonLoggerConfig" message="EmptyValue" tracePoint="AFTER_REQUEST" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<set-variable value="#[payload.casenumber]" doc:name="caseNumber" doc:id="9f680c85-3930-4aa2-a002-e8c4ccb49a9b" variableName="caseNumber" />
+		<set-variable value="#[payload.data.event.EventApiName]" doc:name="eventType" doc:id="904bb77e-52f2-433f-a943-c3a690e31179" variableName="eventType" />
+		<set-variable value="#[payload.data.payload.JSON__c]" doc:name="json_c" doc:id="3fc12ab2-4283-49d5-9a49-0f0dc50d0384" variableName="json_c" />
+		<ee:transform doc:name="Mapping to OutboundEventSnapshot" doc:id="1f03bfdf-c342-4055-b8b4-79ceacec8479">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var jsonC = read (payload.data.payload.JSON__c, "application/json")
+//var jsonC = payload
+---
+{
+	"ExamAppointmentId__c": jsonC.ExamManagementEventNotification.AppointmentCompletedEvent.attributes.examAppointmentUuid default '',
+    "ExamContentionId__c": jsonC.ExamManagementEventNotification.AppointmentCompletedEvent.ExamRelatedContentionUuids.UuidValue default '',
+	"EventId__c": jsonC.ExamManagementEventNotification.AppointmentCompletedEvent.attributes.eventUuid default '',
+	//"ExamSchedulingRequestId__c": jsonC.ExamManagementEventNotification.AppointmentScheduledEvent.attributes.examSchedulingRequestUuid,
+	"ExamSchedulingRequestId__c": vars.esrID,
+	"PreviousEvent__c": jsonC.ExamManagementEventNotification.AppointmentCompletedEvent.attributes.previousEventUuid default '',
+	"EventType__c": vars.eventType default '',
+	"EventDtg__c": jsonC.ExamManagementEventNotification.AppointmentCompletedEvent.attributes.eventDtg default '',
+	"PEJson__c": vars.json_c,
+	"ModelVersion__c": jsonC.ExamManagementEventNotification.AppointmentCompletedEvent.attributes.modelVersion default '',
+	"Case__c": vars.casenumber default '',
+	"SkipValidation__c": false,
+	"Status__c": "ReadyToSend"	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="9159c6a2-3e9c-4da3-81a4-bb60db61bcc7" config-ref="jsonLoggerConfig" message="Payload" tracePoint="AFTER_TRANSFORM" />
+		<flow-ref
+			doc:name="main-process-outbound-request-event-flow"
+			doc:id="a1f21981-2c67-444c-a187-d00f1e7855f9"
+			name="request-create-outbound-event"/>
+		<json-logger:logger doc:name="Logger1" doc:id="9f641b8d-0413-4daa-b0a8-6b2426b61c44" config-ref="jsonLoggerConfig" message="End Process" tracePoint="END" />
+		<error-handler ref="event-error-handler" />
+	</flow>
+	</mule>

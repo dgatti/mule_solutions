@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd">
+	<flow name="main-post-event-to-xmlgateway-sapi-main" doc:id="38b9a4df-de2e-41d5-810d-4e74e23fb65e" >
+		<json-logger:logger doc:name="Log Payload" doc:id="02ff368c-d1df-4179-8ce4-225a0244bf54" config-ref="jsonLoggerConfig" message="Start Process"/>
+		<ee:transform doc:name="Message for queue" doc:id="41a66314-87dc-4691-a421-f8a4d914d128" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sqsPayload" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	delaySeconds: 0,
+	body: payload.^raw as String,
+	messageAttributes: {
+		("esrID": {
+			"stringValue" : vars.esrID,
+			"dataType" : "String.esrID"
+		} as Object {class: "org.mule.extension.sqs.api.model.MessageAttributeValue"}) if !isBlank(vars.esrID),
+		"environment": {
+			"stringValue" : p('env'),
+			"dataType" : "String.environment"
+		} as Object {class: "org.mule.extension.sqs.api.model.MessageAttributeValue"},
+		"sentFor": {
+			"stringValue" : "Outbound Event",
+			"dataType" : "String.sentFor"
+		} as Object {class: "org.mule.extension.sqs.api.model.MessageAttributeValue"},
+		"dateSent": {
+			"stringValue" : (now() as DateTime) as String,
+			"dataType" : "String.documentType"
+		} as Object {class: "org.mule.extension.sqs.api.model.MessageAttributeValue"}
+	} as Object {class: "java.util.HashMap"}
+} as Object {class: "org.mule.extension.sqs.api.model.Message"}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<sqs:send-message doc:id="da092106-d534-43af-b7d8-bff99359dda0" config-ref="awsSqsConfig" queueUrl="${aws.sqs.requestQueue}" doc:name="Send message" target="sqsResponse">
+			<sqs:message ><![CDATA[#[vars.sqsPayload]]]></sqs:message>
+		</sqs:send-message>
+	</flow>
+</mule>

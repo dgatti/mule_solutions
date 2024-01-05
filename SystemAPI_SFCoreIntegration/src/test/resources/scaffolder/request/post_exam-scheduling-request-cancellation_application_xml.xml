@@ -1,0 +1,21 @@
+ExamSchedulingRequestCancellationEventRequestExample: |-
+  <ExamManagementEventNotification xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                 xmlns="http://va.gov/vler/schemas/vlerSupersetSchema/examManagement/4.3"
+                                 xsi:schemaLocation="http://va.gov/vler/schemas/vlerSupersetSchema/examManagement/4.3 ../../../../XMLschemas/exchange/ExamManagement-4.3.xsd">
+    <OriginatingSystem participatingSystemName="VBMS"/>
+    <Destination participatingSystemName="VBA Contractor" contractorName="QTC"/>
+    <ExamSchedulingRequestCancellationEvent
+            eventUuid="4dc9d26a-70c7-4b7c-89c1-40f4b79bd31b"
+            eventDtg="2016-08-27T12:08:50.238-04:00"
+            previousEventUuid="178c6a96-54e9-49ba-924b-f2e54c371c7b"
+            modelVersion="4.3"
+            examSchedulingRequestUuid="fa7fda6a-7e3f-44ec-9aa0-9b0c19ec88d4">
+        <EventSource participatingSystemName="VBMS"/>
+        <ExamCancellationReason>Veteran Died</ExamCancellationReason>
+        <!--Optional:-->
+        <ExamCancellationReasonFreeText>
+            EMS receives a request to cancel Exam request via
+            ExamSchedulingRequestCancellationEvent from VBMS.
+        </ExamCancellationReasonFreeText>
+    </ExamSchedulingRequestCancellationEvent>
+  </ExamManagementEventNotification>
