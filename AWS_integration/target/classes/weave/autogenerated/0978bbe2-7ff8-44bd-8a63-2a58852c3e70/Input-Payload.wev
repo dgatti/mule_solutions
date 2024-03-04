@@ -1,8 +1,0 @@
-%dw 2.0
-
-type auto_0978bbe2_7ff8_44bd_8a63_2a58852c3e70_Input_Payload = {
-  file: String, 
-  name: String, 
-  _?: Any
-}
-
